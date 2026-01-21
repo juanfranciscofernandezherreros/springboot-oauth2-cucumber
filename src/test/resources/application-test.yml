@@ -1,0 +1,36 @@
+server:
+  port: 0 # <--- TRUCO: Poner 0 hace que use un puerto aleatorio disponible (evita errores de 'Address already in use')
+
+application:
+  security:
+    redis-enabled: true
+    ip-lock:
+      enabled: true
+      max-attempts: 3
+      lock-time-minutes: 1
+    jwt:
+      secret-key: McvbIKwPaVjhmKBwFUdHDXzvfWeAZgaJ8XJr6cBsvNkPI9VUvAWw7GzFMV6ZhHsI
+      expiration: 60000
+      refresh-token:
+        expiration: 300000
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 1
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
