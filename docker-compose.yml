@@ -4,14 +4,12 @@ services:
     container_name: redis_container
     ports:
       - "6379:6379"
-    # Healthcheck: Comprueba cada 5s si Redis responde PONG
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  # Interfaz visual para Redis (http://localhost:8081)
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: redis_web_ui
@@ -29,10 +27,8 @@ services:
       dockerfile: Dockerfile
     image: springboot-oauth-app
     container_name: spring_app
-    env_file:
-      - .env
     ports:
       - "8087:8087"
     depends_on:
       redis:
-        condition: service_healthy # Espera a que Redis esté "sano", no solo encendido
+        condition: service_healthy
