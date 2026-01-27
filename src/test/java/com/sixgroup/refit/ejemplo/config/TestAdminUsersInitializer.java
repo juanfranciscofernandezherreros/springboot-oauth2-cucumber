@@ -11,6 +11,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.Date;
+
 @Slf4j
 @Component
 @Profile("test")
@@ -27,6 +30,14 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
 
         createAdminIfNotExists("admin1@test.com", "Admin123!", "Admin One");
         createAdminIfNotExists("admin2@test.com", "Admin123!", "Admin Two");
+
+
+        createLockedUserIfNotExists(
+                "locked.user@test.com",
+                "User123!",
+                "Locked User"
+        );
+
 
         log.info("✅ [TEST] Inicialización de usuarios ADMIN finalizada");
     }
@@ -53,4 +64,28 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
 
         log.info("✅ [TEST] Admin creado correctamente: {}", email);
     }
+
+    private void createLockedUserIfNotExists(String email, String rawPassword, String name) {
+
+        if (userRepository.existsByEmail(email)) {
+            log.info("ℹ️ [TEST] Usuario bloqueado ya existe: {}", email);
+            return;
+        }
+
+        User lockedUser = User.builder()
+                .name(name)
+                .email(email)
+                .password(passwordEncoder.encode(rawPassword))
+                .role(Role.USER)
+                .failedAttempt(5)
+                .lockCount(1)
+                .accountNonLocked(false)
+                .lockTime(new Date())
+                .build();
+
+        userRepository.save(lockedUser);
+
+        log.info("🔒 [TEST] Usuario bloqueado creado: {}", email);
+    }
+
 }

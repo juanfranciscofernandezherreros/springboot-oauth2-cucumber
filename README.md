@@ -3,6 +3,9 @@ mvn verify -Dcucumber.filter.tags="@security"
 mvn verify -Dcucumber.filter.tags="@logout"
 mvn verify -Dcucumber.filter.tags="@reset-password"
 
+mvn verify -Dcucumber.filter.tags="@admin_list"
+
+
 🔐 /auth/register
 ✅ Escenarios válidos
 

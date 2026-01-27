@@ -1,5 +1,6 @@
 package com.sixgroup.refit.ejemplo.usuario;
 
+import com.sixgroup.refit.ejemplo.admin.AdminUserListResponse;
 import com.sixgroup.refit.ejemplo.model.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +17,23 @@ public class UserService {
     private final UserRepository userRepository;
 
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<AdminUserListResponse> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(this::toAdminUserListResponse)
+                .toList();
+    }
+
+
+    private AdminUserListResponse toAdminUserListResponse(User user) {
+        return AdminUserListResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .accountNonLocked(user.isAccountNonLocked())
+                .failedAttempt(user.getFailedAttempt())
+                .build();
     }
 
     public List<User> getLockedUsers() {

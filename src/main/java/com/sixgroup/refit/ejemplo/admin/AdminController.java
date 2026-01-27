@@ -34,7 +34,7 @@ public class AdminController {
      */
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<AdminUserListResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
