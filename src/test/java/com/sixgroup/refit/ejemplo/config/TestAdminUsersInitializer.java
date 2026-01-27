@@ -26,22 +26,62 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
 
-        log.info("🚀 [TEST] Inicializando usuarios ADMIN de test");
+        log.info("🚀 [TEST] Inicializando usuarios de test");
 
+        // =====================
+        // ADMINS
+        // =====================
         createAdminIfNotExists("admin1@test.com", "Admin123!", "Admin One");
         createAdminIfNotExists("admin2@test.com", "Admin123!", "Admin Two");
 
+        // =====================
+        // USER NORMAL (LOGIN OK)
+        // =====================
+        createUserIfNotExists(
+                "usuario@login.com",
+                "passLogin123",
+                "Usuario Login"
+        );
+        createUserIfNotExists(
+                "user@test.com",
+                "123",
+                "UsuarioQueVaAserActualizado"
+        );
 
+        createUserIfNotExists(
+                "fresh_user@test.com",
+                "123",
+                "UserToTestLogout"
+        );
+
+        createUserIfNotExists(
+                "reset_test@test.com",
+                "PassActual123",
+                "ResetPassword"
+        );
+
+        createUserIfNotExists(
+                "usuario_profile_1@test.com",
+                "passLogin123",
+                "PassLogin123"
+        );
+
+
+        // =====================
+        // USER BLOQUEADO
+        // =====================
         createLockedUserIfNotExists(
                 "locked.user@test.com",
                 "User123!",
                 "Locked User"
         );
 
-
-        log.info("✅ [TEST] Inicialización de usuarios ADMIN finalizada");
+        log.info("✅ [TEST] Inicialización de usuarios finalizada");
     }
 
+    // =====================================================
+    // ADMIN
+    // =====================================================
     private void createAdminIfNotExists(String email, String rawPassword, String name) {
 
         if (userRepository.existsByEmail(email)) {
@@ -61,10 +101,37 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 .build();
 
         userRepository.save(admin);
-
-        log.info("✅ [TEST] Admin creado correctamente: {}", email);
+        log.info("✅ [TEST] Admin creado: {}", email);
     }
 
+    // =====================================================
+    // USER NORMAL (NO BLOQUEADO)
+    // =====================================================
+    private void createUserIfNotExists(String email, String rawPassword, String name) {
+
+        if (userRepository.existsByEmail(email)) {
+            log.info("ℹ️ [TEST] Usuario ya existe: {}", email);
+            return;
+        }
+
+        User user = User.builder()
+                .name(name)
+                .email(email)
+                .password(passwordEncoder.encode(rawPassword))
+                .role(Role.USER)
+                .failedAttempt(0)
+                .lockCount(0)
+                .accountNonLocked(true)
+                .lockTime(null)
+                .build();
+
+        userRepository.save(user);
+        log.info("👤 [TEST] Usuario creado: {}", email);
+    }
+
+    // =====================================================
+    // USER BLOQUEADO
+    // =====================================================
     private void createLockedUserIfNotExists(String email, String rawPassword, String name) {
 
         if (userRepository.existsByEmail(email)) {
@@ -84,8 +151,6 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 .build();
 
         userRepository.save(lockedUser);
-
         log.info("🔒 [TEST] Usuario bloqueado creado: {}", email);
     }
-
 }

@@ -8,7 +8,7 @@ Feature: Registro de usuarios
   # REGISTRO CORRECTO
   # =========================================================
   Scenario Outline: Registro exitoso de usuarios con rol USER
-    Given reinicio el entorno y me registro con usuario "<email>" y password "<password>" y rol "<role>"
+    Given reinicio el entorno y me registro con usuario "<email>" y password "<password>"
     Then el sistema responde con código 201
 
     Examples:
@@ -29,6 +29,6 @@ Feature: Registro de usuarios
     Then el sistema responde con código 400
 
   Scenario: Registro falla si el email ya existe
-    Given reinicio el entorno y me registro con usuario "duplicado@login.com" y password "Password123!" y rol "USER"
+    Given reinicio el entorno y me registro con usuario "duplicado@login.com" y password "Password123!"
     When registro un usuario con email "duplicado@login.com" y password "Password123!" y rol "USER"
     Then el sistema responde con código 400

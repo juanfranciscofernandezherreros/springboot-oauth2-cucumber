@@ -1,8 +1,7 @@
 mvn verify -Dcucumber.filter.tags="not @security"
 mvn verify -Dcucumber.filter.tags="@security"
 mvn verify -Dcucumber.filter.tags="@logout"
-mvn verify -Dcucumber.filter.tags="@reset-password"
-
+mvn verify -Dcucumber.filter.tags="@admin_create_user_role"
 mvn verify -Dcucumber.filter.tags="@admin_list"
 
 
