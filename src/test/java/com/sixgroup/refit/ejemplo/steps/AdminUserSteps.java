@@ -37,7 +37,7 @@ public class AdminUserSteps extends BaseRestConfig {
                       "role": "USER"
                     }
                     """.formatted(email))
-                .post(CREATE_USER);
+                .post(BASE+CREATE_USER);
     }
 
     // =====================================================
@@ -51,7 +51,7 @@ public class AdminUserSteps extends BaseRestConfig {
 
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
-                .get(USERS);
+                .get(BASE+USERS);
     }
 
     // =====================================================
@@ -65,7 +65,7 @@ public class AdminUserSteps extends BaseRestConfig {
 
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
-                .get(LOCKED_USERS);
+                .get(BASE+LOCKED_USERS);
     }
 
     // =====================================================
@@ -80,7 +80,7 @@ public class AdminUserSteps extends BaseRestConfig {
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
                 .queryParam("email", email)
-                .get(USER_STATUS);
+                .get(BASE+USER_STATUS);
     }
 
     // =====================================================
@@ -100,7 +100,7 @@ public class AdminUserSteps extends BaseRestConfig {
                       "email": "%s"
                     }
                     """.formatted(email))
-                .post(UNLOCK_USER);
+                .post(BASE+UNLOCK_USER);
     }
 
     // =====================================================
@@ -121,7 +121,7 @@ public class AdminUserSteps extends BaseRestConfig {
                       "role": "%s"
                     }
                     """.formatted(email, role))
-                .put(UPDATE_ROLE);
+                .put(BASE+UPDATE_ROLE);
     }
 
     // =====================================================
@@ -136,7 +136,7 @@ public class AdminUserSteps extends BaseRestConfig {
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
                 .queryParam("email", email)
-                .delete(DELETE_USER);
+                .delete(BASE+DELETE_USER);
     }
 
     // =====================================================

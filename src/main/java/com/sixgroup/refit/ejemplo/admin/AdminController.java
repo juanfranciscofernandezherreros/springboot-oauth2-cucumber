@@ -92,8 +92,7 @@ public class AdminController {
     @DeleteMapping(DELETE_USER)
     @PreAuthorize("hasAuthority('admin:delete')")
     public ResponseEntity<Map<String, String>> deleteUser(
-            @RequestParam String email
-    ) {
+            @RequestParam String email) {
         userService.deleteUser(email);
         return ResponseEntity.ok(
                 Map.of("mensaje", "Usuario " + email + " eliminado correctamente.")

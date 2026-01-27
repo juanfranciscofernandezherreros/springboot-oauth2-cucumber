@@ -66,6 +66,11 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 "PassLogin123"
         );
 
+        createUserIfNotExists(
+                "usuario_paraborrar@login.com",
+                "passLogin123",
+                "PassLogin123"
+        );
 
         // =====================
         // USER BLOQUEADO
