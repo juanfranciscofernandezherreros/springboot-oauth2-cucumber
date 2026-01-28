@@ -1,4 +1,4 @@
-package com.sixgroup.refit.ejemplo.utils;
+package com.sixgroup.refit.ejemplo.utils.constants;
 
 public final class AdminApiPaths {
 

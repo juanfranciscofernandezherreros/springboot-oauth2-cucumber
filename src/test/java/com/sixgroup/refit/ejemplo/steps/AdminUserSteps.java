@@ -7,7 +7,7 @@ import io.cucumber.java.en.When;
 import net.serenitybdd.rest.SerenityRest;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
-import static com.sixgroup.refit.ejemplo.utils.AdminApiPaths.*;
+import static com.sixgroup.refit.ejemplo.utils.constants.AdminApiPaths.*;
 import static org.hamcrest.Matchers.*;
 
 public class AdminUserSteps extends BaseRestConfig {

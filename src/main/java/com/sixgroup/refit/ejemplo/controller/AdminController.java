@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-import static com.sixgroup.refit.ejemplo.utils.AdminApiPaths.*;
+import static com.sixgroup.refit.ejemplo.utils.constants.AdminApiPaths.*;
 
 @RestController
 @RequestMapping(BASE)

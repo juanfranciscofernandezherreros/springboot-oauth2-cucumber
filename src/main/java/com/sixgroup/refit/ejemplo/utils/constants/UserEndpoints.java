@@ -1,0 +1,14 @@
+package com.sixgroup.refit.ejemplo.utils.constants;
+
+public final class UserEndpoints {
+
+    private UserEndpoints() {
+        // Evita instanciación
+    }
+
+    public static final String BASE = "/api/v1/user";
+
+    public static final String ME = "/me";
+    public static final String UPDATE = "/update";
+}
+

@@ -4,6 +4,7 @@ import com.sixgroup.refit.ejemplo.dto.UpdateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.UserResponse;
 import com.sixgroup.refit.ejemplo.model.User;
 import com.sixgroup.refit.ejemplo.service.UserService;
+import com.sixgroup.refit.ejemplo.utils.constants.UserEndpoints;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,14 +12,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping(UserEndpoints.BASE)
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    // Ver mi propio perfil
-    @GetMapping("/me")
+    @GetMapping(UserEndpoints.ME)
     public ResponseEntity<UserResponse> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getUserStatus(userDetails.getUsername());
 
@@ -32,16 +32,14 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // Actualizar mis propios datos -> AHORA DEVUELVE UserResponse
-    @PutMapping("/update")
+    @PutMapping(UserEndpoints.UPDATE)
     public ResponseEntity<UserResponse> updateMyProfile(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody UpdateUserRequest request
     ) {
-        // 1. Llamamos al servicio (que nos devuelve la Entidad actualizada)
-        User updatedUser = userService.updateMyProfile(userDetails.getUsername(), request);
+        User updatedUser =
+                userService.updateMyProfile(userDetails.getUsername(), request);
 
-        // 2. Convertimos la Entidad a DTO para evitar ciclos y ocultar datos sensibles
         UserResponse response = new UserResponse(
                 updatedUser.getId(),
                 updatedUser.getName(),
