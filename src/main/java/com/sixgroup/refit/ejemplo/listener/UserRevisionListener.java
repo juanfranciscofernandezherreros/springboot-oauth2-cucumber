@@ -1,6 +1,6 @@
 package com.sixgroup.refit.ejemplo.listener;
 
-import com.sixgroup.refit.ejemplo.usuario.CustomRevisionEntity;
+import com.sixgroup.refit.ejemplo.model.CustomRevisionEntity;
 import org.hibernate.envers.RevisionListener;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

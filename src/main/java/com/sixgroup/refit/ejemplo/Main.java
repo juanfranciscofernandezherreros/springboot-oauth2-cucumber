@@ -1,8 +1,8 @@
 package com.sixgroup.refit.ejemplo;
 
 import com.sixgroup.refit.ejemplo.model.Role;
-import com.sixgroup.refit.ejemplo.usuario.User;
-import com.sixgroup.refit.ejemplo.usuario.UserRepository;
+import com.sixgroup.refit.ejemplo.model.User;
+import com.sixgroup.refit.ejemplo.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

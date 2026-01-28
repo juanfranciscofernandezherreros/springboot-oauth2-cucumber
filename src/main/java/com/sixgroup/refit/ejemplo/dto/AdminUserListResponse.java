@@ -1,4 +1,4 @@
-package com.sixgroup.refit.ejemplo.admin;
+package com.sixgroup.refit.ejemplo.dto;
 
 import com.sixgroup.refit.ejemplo.model.Role;
 import lombok.AllArgsConstructor;

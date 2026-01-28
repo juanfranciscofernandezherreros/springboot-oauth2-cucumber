@@ -1,13 +1,13 @@
 package com.sixgroup.refit.ejemplo.service;
 
-import com.sixgroup.refit.ejemplo.controller.*;
+import com.sixgroup.refit.ejemplo.dto.*;
 import com.sixgroup.refit.ejemplo.exceptions.InvalidRoleForRegistrationException;
 import com.sixgroup.refit.ejemplo.exceptions.IpBlockedException;
 import com.sixgroup.refit.ejemplo.model.Role;
-import com.sixgroup.refit.ejemplo.usuario.User;
-import com.sixgroup.refit.ejemplo.repository.Token;
+import com.sixgroup.refit.ejemplo.model.User;
+import com.sixgroup.refit.ejemplo.model.Token;
 import com.sixgroup.refit.ejemplo.repository.TokenRepository;
-import com.sixgroup.refit.ejemplo.usuario.UserRepository;
+import com.sixgroup.refit.ejemplo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;

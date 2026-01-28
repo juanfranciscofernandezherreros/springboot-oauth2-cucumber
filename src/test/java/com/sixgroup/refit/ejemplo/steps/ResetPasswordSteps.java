@@ -1,7 +1,7 @@
 package com.sixgroup.refit.ejemplo.steps;
 
 import com.sixgroup.refit.ejemplo.config.BaseRestConfig;
-import com.sixgroup.refit.ejemplo.usuario.UserRepository;
+import com.sixgroup.refit.ejemplo.repository.UserRepository;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;

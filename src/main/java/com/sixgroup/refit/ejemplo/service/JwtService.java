@@ -1,6 +1,6 @@
 package com.sixgroup.refit.ejemplo.service;
 
-import com.sixgroup.refit.ejemplo.usuario.User;
+import com.sixgroup.refit.ejemplo.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

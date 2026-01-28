@@ -1,8 +1,8 @@
 package com.sixgroup.refit.ejemplo.config;
 
 import com.sixgroup.refit.ejemplo.model.Role;
-import com.sixgroup.refit.ejemplo.usuario.User;
-import com.sixgroup.refit.ejemplo.usuario.UserRepository;
+import com.sixgroup.refit.ejemplo.model.User;
+import com.sixgroup.refit.ejemplo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 
 @Slf4j

@@ -1,4 +1,4 @@
-package com.sixgroup.refit.ejemplo.controller;
+package com.sixgroup.refit.ejemplo.dto;
 
 import com.sixgroup.refit.ejemplo.model.Role;
 

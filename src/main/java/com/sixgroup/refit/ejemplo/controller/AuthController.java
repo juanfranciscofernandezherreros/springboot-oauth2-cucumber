@@ -1,5 +1,9 @@
 package com.sixgroup.refit.ejemplo.controller;
 
+import com.sixgroup.refit.ejemplo.dto.LoginRequest;
+import com.sixgroup.refit.ejemplo.dto.RegisterRequest;
+import com.sixgroup.refit.ejemplo.dto.ResetPasswordRequest;
+import com.sixgroup.refit.ejemplo.dto.TokenResponse;
 import com.sixgroup.refit.ejemplo.service.AuthService;
 // El IpLockService ya no se usa directamente aquí en los catch, lo maneja el AuthService
 import jakarta.servlet.http.HttpServletRequest;
