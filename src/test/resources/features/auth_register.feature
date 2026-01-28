@@ -21,7 +21,7 @@ Feature: Registro de usuarios
   Scenario: Registro falla si se intenta registrar un ADMIN
     Given reinicio el entorno
     When registro un usuario con email "admin@login.com" y password "Admin123!" y rol "ADMIN"
-    Then el sistema responde con código 400
+    Then el sistema responde con código 403
 
   Scenario: Registro falla si el rol no pertenece al sistema
     Given reinicio el entorno

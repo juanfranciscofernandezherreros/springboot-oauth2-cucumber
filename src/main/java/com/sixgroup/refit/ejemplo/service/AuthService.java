@@ -2,6 +2,7 @@ package com.sixgroup.refit.ejemplo.service;
 
 import com.sixgroup.refit.ejemplo.controller.*;
 import com.sixgroup.refit.ejemplo.exceptions.InvalidRoleForRegistrationException;
+import com.sixgroup.refit.ejemplo.exceptions.IpBlockedException;
 import com.sixgroup.refit.ejemplo.model.Role;
 import com.sixgroup.refit.ejemplo.usuario.User;
 import com.sixgroup.refit.ejemplo.repository.Token;
@@ -43,13 +44,13 @@ public class AuthService {
         };
     }
 
-    // AÑADIDO: clientIp para validar antes de crear nada
-    // AÑADIDO: clientIp para validar antes de crear nada
+    /* ===================== REGISTRO ===================== */
+
     @Transactional
     public void register(RegisterRequest request, String clientIp) {
 
         if (ipLockService.isIpBlocked(clientIp)) {
-            throw new LockedException("Tu IP está bloqueada. No puedes registrar cuentas.");
+            throw new IpBlockedException();
         }
 
         if (request.role() != Role.USER) {
@@ -60,7 +61,7 @@ public class AuthService {
                 .name(request.name())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .role(Role.USER) // aquí ya es seguro
+                .role(Role.USER)
                 .accountNonLocked(true)
                 .failedAttempt(0)
                 .lockCount(0)
@@ -69,19 +70,18 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    // En AuthService.java
-
-    // 1. Método para la WEB (Público)
     @Transactional
     public void registerPublic(RegisterRequest request, String clientIp) {
-        // Validar IP...
-        if (ipLockService.isIpBlocked(clientIp)) throw new LockedException("IP Bloqueada");
+
+        if (ipLockService.isIpBlocked(clientIp)) {
+            throw new IpBlockedException();
+        }
 
         var user = User.builder()
                 .name(request.name())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .role(Role.USER) // <--- SIEMPRE USER
+                .role(Role.USER)
                 .accountNonLocked(true)
                 .failedAttempt(0)
                 .lockCount(0)
@@ -90,11 +90,8 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    // 2. Método para el PANEL ADMIN (Privado)
     @Transactional
     public void registerByAdmin(AdminCreateUserRequest request) {
-        // Aquí NO validamos IP lock del admin (se supone que es de confianza),
-        // pero podrías validarlo si quieres.
 
         var user = User.builder()
                 .name(request.name())
@@ -107,33 +104,34 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-        log.info("ADMIN creó un nuevo usuario: {} con rol {}", request.email(), request.role());
+        log.info("ADMIN creó usuario {} con rol {}", request.email(), request.role());
     }
+
+    /* ===================== LOGIN ===================== */
 
     public TokenResponse login(LoginRequest request, String clientIp) {
 
-        // 1. Validación preventiva de IP
         if (ipLockService.isIpBlocked(clientIp)) {
-            throw new LockedException("Tu IP ha sido bloqueada temporalmente por seguridad.");
+            throw new IpBlockedException();
         }
 
         var user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> {
-                    // Si no existe usuario, castigamos la IP (evita escaneo de emails)
                     ipLockService.registerFailedAttempt(clientIp);
-                    return new BadCredentialsException("Usuario no encontrado");
+                    return new BadCredentialsException("Credenciales inválidas");
                 });
 
         if (!user.isAccountNonLocked()) {
             long duration = getLockDuration(user.getLockCount());
             if (duration == -1L) {
-                throw new LockedException("Cuenta bloqueada permanentemente. Contacte a soporte.");
+                throw new LockedException("Cuenta bloqueada permanentemente. Contacte con soporte.");
             }
+
             if (shouldUnlock(user)) {
                 unlockUser(user);
             } else {
                 long timeLeft = (user.getLockTime().getTime() + duration) - System.currentTimeMillis();
-                throw new LockedException("Cuenta bloqueada. Intenta en " + (timeLeft / 1000) + " segundos.");
+                throw new LockedException("Cuenta bloqueada. Inténtelo en " + (timeLeft / 1000) + " segundos.");
             }
         }
 
@@ -143,22 +141,51 @@ public class AuthService {
             );
 
             resetAllAttempts(user);
-            var jwtToken = jwtService.generateToken(user);
+
+            var accessToken = jwtService.generateToken(user);
             var refreshToken = jwtService.generateRefreshToken(user);
 
             revokeAllUserTokens(user);
-            saveUserToken(user, jwtToken);
+            saveUserToken(user, accessToken);
             saveUserToken(user, refreshToken);
 
-            return new TokenResponse(jwtToken, refreshToken);
+            return new TokenResponse(accessToken, refreshToken);
 
         } catch (BadCredentialsException e) {
-            // Fallo de contraseña: penalizamos cuenta Y penalizamos IP
             updateFailedAttempts(request.email());
             ipLockService.registerFailedAttempt(clientIp);
             throw e;
         }
     }
+
+    /* ===================== PASSWORD ===================== */
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request, String clientIp) {
+
+        if (ipLockService.isIpBlocked(clientIp)) {
+            throw new IpBlockedException();
+        }
+
+        var user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> {
+                    ipLockService.registerFailedAttempt(clientIp);
+                    return new RuntimeException("Solicitud inválida");
+                });
+
+        if (!user.isAccountNonLocked()) {
+            ipLockService.registerFailedAttempt(clientIp);
+            throw new LockedException("La cuenta está bloqueada.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        revokeAllUserTokens(user);
+        userRepository.save(user);
+
+        log.info("Contraseña actualizada para {}", user.getEmail());
+    }
+
+    /* ===================== MÉTODOS PRIVADOS ===================== */
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateFailedAttempts(String email) {
@@ -172,58 +199,26 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    // AÑADIDO: clientIp como parámetro
-    @Transactional
-    public void resetPassword(ResetPasswordRequest request, String clientIp) {
-        // 1. Validación de IP primero
-        if (ipLockService.isIpBlocked(clientIp)) { // <--- NUEVO
-            throw new LockedException("Tu IP está bloqueada.");
-        }
-
-        var user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> {
-                    // Si intentan cambiar password de un email que NO existe -> Castigo a la IP
-                    ipLockService.registerFailedAttempt(clientIp); // <--- NUEVO
-                    // Importante: Lanzamos excepción genérica o BadCredentials para no dar pistas
-                    return new RuntimeException("Solicitud inválida");
-                });
-
-        if (!user.isAccountNonLocked()) {
-            log.error("SEGURIDAD: Intento de reset de password en cuenta bloqueada: {}", user.getEmail());
-            // Si la cuenta está bloqueada, también sumamos un strike a la IP por insistente
-            ipLockService.registerFailedAttempt(clientIp); // <--- NUEVO (Opcional)
-
-            throw new LockedException("OPERACIÓN DENEGADA: La cuenta se encuentra bloqueada.");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
-        revokeAllUserTokens(user);
-        userRepository.save(user);
-        log.info("ÉXITO: Contraseña actualizada para el usuario {}", user.getEmail());
-    }
-
-    // --- MÉTODOS PRIVADOS ---
-    // (Igual que antes...)
     private void processFailedAttempt(User user) {
-        int newAttempts = user.getFailedAttempt() + 1;
-        user.setFailedAttempt(newAttempts);
+        int attempts = user.getFailedAttempt() + 1;
+        user.setFailedAttempt(attempts);
 
-        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+        if (attempts >= MAX_FAILED_ATTEMPTS) {
             user.setAccountNonLocked(false);
             user.setLockTime(new Date());
             user.setLockCount(user.getLockCount() + 1);
             user.setFailedAttempt(0);
-            log.warn("Usuario {} BLOQUEADO - Nivel {}", user.getEmail(), user.getLockCount());
+            log.warn("Usuario {} bloqueado (nivel {})", user.getEmail(), user.getLockCount());
         }
+
         userRepository.saveAndFlush(user);
     }
 
-    // (Resto de métodos privados igual: shouldUnlock, resetAllAttempts, saveUserToken, revokeAllUserTokens...)
     private boolean shouldUnlock(User user) {
         if (user.getLockTime() == null) return true;
         long duration = getLockDuration(user.getLockCount());
         if (duration == -1L) return false;
-        return (user.getLockTime().getTime() + duration) < System.currentTimeMillis();
+        return user.getLockTime().getTime() + duration < System.currentTimeMillis();
     }
 
     private void resetAllAttempts(User user) {
@@ -246,37 +241,42 @@ public class AuthService {
     }
 
     private void revokeAllUserTokens(User user) {
-        var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
-        if (validUserTokens.isEmpty()) return;
-        validUserTokens.forEach(token -> {
+        var tokens = tokenRepository.findAllValidTokenByUser(user.getId());
+        tokens.forEach(token -> {
             token.setExpired(true);
             token.setRevoked(true);
         });
-        tokenRepository.saveAll(validUserTokens);
+        tokenRepository.saveAll(tokens);
     }
+
+    /* ===================== LOGOUT / REFRESH ===================== */
 
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
-        // Nota: Podrías añadir validación de IP aquí también si quieres máxima seguridad
         if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
-        final String refreshToken = authHeader.substring(7);
-        try {
-            String userEmail = jwtService.extractUsername(refreshToken);
-            if (userEmail != null) {
-                var user = userRepository.findByEmail(userEmail).orElseThrow();
-                var storedToken = tokenRepository.findByToken(refreshToken).orElse(null);
 
-                if (storedToken != null && !storedToken.isRevoked() && jwtService.isTokenValid(refreshToken, user)) {
-                    revokeAllUserTokens(user);
-                    var accessToken = jwtService.generateToken(user);
-                    var newRefreshToken = jwtService.generateRefreshToken(user);
-                    saveUserToken(user, accessToken);
-                    saveUserToken(user, newRefreshToken);
-                    return new TokenResponse(accessToken, newRefreshToken);
-                }
+        try {
+            String refreshToken = authHeader.substring(7);
+            String email = jwtService.extractUsername(refreshToken);
+
+            var user = userRepository.findByEmail(email).orElseThrow();
+            var storedToken = tokenRepository.findByToken(refreshToken).orElse(null);
+
+            if (storedToken != null && !storedToken.isRevoked()
+                    && jwtService.isTokenValid(refreshToken, user)) {
+
+                revokeAllUserTokens(user);
+
+                var accessToken = jwtService.generateToken(user);
+                var newRefreshToken = jwtService.generateRefreshToken(user);
+
+                saveUserToken(user, accessToken);
+                saveUserToken(user, newRefreshToken);
+
+                return new TokenResponse(accessToken, newRefreshToken);
             }
         } catch (Exception e) {
-            log.error("Error en proceso de Refresh");
+            log.error("Error en refresh token", e);
         }
         return null;
     }
@@ -284,13 +284,13 @@ public class AuthService {
     @Transactional
     public void logout(String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) return;
-        final String jwt = authHeader.substring(7);
-        tokenRepository.findByToken(jwt).ifPresent(token -> {
+
+        tokenRepository.findByToken(authHeader.substring(7)).ifPresent(token -> {
             token.setExpired(true);
             token.setRevoked(true);
             tokenRepository.save(token);
             SecurityContextHolder.clearContext();
-            log.info("Cierre de sesión: Token invalidado.");
+            log.info("Logout realizado");
         });
     }
 }

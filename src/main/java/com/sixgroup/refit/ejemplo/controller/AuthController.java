@@ -18,7 +18,6 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService service;
-    // private final IpLockService ipLockService; // Ya no es necesario inyectarlo aquí si toda la lógica pasó al Service
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(

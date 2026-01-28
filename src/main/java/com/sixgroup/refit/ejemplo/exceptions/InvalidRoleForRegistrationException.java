@@ -3,7 +3,12 @@ package com.sixgroup.refit.ejemplo.exceptions;
 public class InvalidRoleForRegistrationException extends RuntimeException {
 
     public InvalidRoleForRegistrationException() {
-        super("Solo se permite registrar usuarios con rol USER");
+        super("No está permitido registrar usuarios con este rol.");
+    }
+
+    public InvalidRoleForRegistrationException(String message) {
+        super(message);
     }
 }
+
 
