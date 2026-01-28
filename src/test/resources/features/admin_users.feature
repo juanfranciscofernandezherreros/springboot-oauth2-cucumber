@@ -44,6 +44,13 @@ Feature: Gestión de usuarios por administrador
     When el administrador desbloquea al usuario con email "locked.user@test.com"
     Then la respuesta tiene código 200
 
+    # =====================================================
+  # BLOQUEAR USUARIO
+  # =====================================================
+  Scenario: El administrador bloquea un usuario activo
+    When el administrador bloquea al usuario con email "active.user@test.com"
+    Then la respuesta tiene código 200
+
   # =====================================================
   # ACTUALIZAR ROL
   # =====================================================

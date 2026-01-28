@@ -71,6 +71,14 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 "PassLogin123"
         );
 
+        createUserIfNotExists(
+                "active.user@test.com",
+                "passLogin123",
+                "ActiveUser"
+        );
+
+
+
         // =====================
         // USER BLOQUEADO
         // =====================
@@ -79,6 +87,8 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 "User123!",
                 "Locked User"
         );
+
+
 
         log.info("✅ [TEST] Inicialización de usuarios finalizada");
     }

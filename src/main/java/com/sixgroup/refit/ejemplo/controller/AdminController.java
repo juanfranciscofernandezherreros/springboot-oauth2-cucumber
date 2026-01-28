@@ -73,6 +73,23 @@ public class AdminController {
         );
     }
 
+    // =====================================================
+    // UPDATE
+    // =====================================================
+    @PostMapping(LOCK_USER)
+    @PreAuthorize("hasAuthority('admin:update')")
+    public ResponseEntity<Map<String, String>> lockUser(
+            @RequestBody Map<String, String> request
+    ) {
+        String email = request.get("email");
+        userService.lockUser(email);
+
+        return ResponseEntity.ok(
+                Map.of("mensaje", "Usuario " + email + " ha sido bloqueado correctamente.")
+        );
+    }
+
+
     @PutMapping(UPDATE_ROLE)
     @PreAuthorize("hasAuthority('admin:update')")
     public ResponseEntity<Map<String, String>> updateRole(

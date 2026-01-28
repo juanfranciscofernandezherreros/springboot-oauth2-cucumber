@@ -60,6 +60,16 @@ public class UserService {
     }
 
     @Transactional
+    public void lockUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        user.setAccountNonLocked(false);
+        userRepository.save(user);
+    }
+
+
+    @Transactional
     public void deleteUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));

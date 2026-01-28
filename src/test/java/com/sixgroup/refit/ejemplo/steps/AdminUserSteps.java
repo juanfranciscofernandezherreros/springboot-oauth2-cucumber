@@ -104,7 +104,27 @@ public class AdminUserSteps extends BaseRestConfig {
     }
 
     // =====================================================
-    // UPDATE ROLE -> PUT /api/v1/admin/update-role
+    // LOCK USER -> POST /api/v1/admin/lock
+    // =====================================================
+
+    @When("el administrador bloquea al usuario con email {string}")
+    public void el_administrador_bloquea_usuario(String email) {
+
+        configureRestAssured();
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .contentType("application/json")
+                .body("""
+                    {
+                      "email": "%s"
+                    }
+                    """.formatted(email))
+                .post(BASE+LOCK_USER);
+    }
+
+    // =====================================================
+    //  -> PUT /api/v1/admin/update-role
     // =====================================================
 
     @When("el administrador actualiza el rol del usuario {string} a {string}")
