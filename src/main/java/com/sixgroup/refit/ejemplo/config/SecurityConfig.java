@@ -29,15 +29,20 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // 1. PÚBLICO: Login, Registro de usuarios normales, Reset Password
+                        // 0. SWAGGER / OPENAPI (PÚBLICO)
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // 1. PÚBLICO: Login, Registro, Reset Password
                         .requestMatchers("/auth/**").permitAll()
 
-                        // 2. PRIVADO (SOLO ADMIN): Crear usuarios avanzados, ver logs, desbloquear, etc.
-                        // Nota: hasRole("ADMIN") espera que la autoridad sea "ROLE_ADMIN".
-                        // Si tu sistema guarda solo "ADMIN", usa .hasAuthority("ADMIN") en su lugar.
+                        // 2. PRIVADO (SOLO ADMIN)
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                        // 3. RESTO: Requiere estar logueado (Cualquier rol: USER o ADMIN)
+                        // 3. RESTO: autenticado
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
