@@ -6,6 +6,9 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import net.serenitybdd.rest.SerenityRest;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import static com.sixgroup.refit.ejemplo.utils.constants.AdminApiPaths.*;
 import static org.hamcrest.Matchers.*;
@@ -94,14 +97,10 @@ public class AdminUserSteps extends BaseRestConfig {
 
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
-                .contentType("application/json")
-                .body("""
-                    {
-                      "email": "%s"
-                    }
-                    """.formatted(email))
-                .post(BASE+UNLOCK_USER);
+                .pathParam("email", email)
+                .post(BASE + UNLOCK_USER + "/{email}");
     }
+
 
     // =====================================================
     // LOCK USER -> POST /api/v1/admin/lock
@@ -114,14 +113,10 @@ public class AdminUserSteps extends BaseRestConfig {
 
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
-                .contentType("application/json")
-                .body("""
-                    {
-                      "email": "%s"
-                    }
-                    """.formatted(email))
-                .post(BASE+LOCK_USER);
+                .pathParam("email", email)
+                .post(BASE + LOCK_USER + "/{email}");
     }
+
 
     // =====================================================
     //  -> PUT /api/v1/admin/update-role
@@ -184,4 +179,9 @@ public class AdminUserSteps extends BaseRestConfig {
                 .body("$", notNullValue())
                 .body("$", is(instanceOf(List.class)));
     }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
 }

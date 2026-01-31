@@ -61,33 +61,34 @@ public class AdminController {
     // =====================================================
     // UPDATE
     // =====================================================
-    @PostMapping(UNLOCK_USER)
+    @PostMapping(UNLOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<Map<String, String>> unlockUser(
-            @RequestBody Map<String, String> request
+    public ResponseEntity<Map<String, String>> unLockUser(
+            @PathVariable String email
     ) {
-        String email = request.get("email");
         userService.unlockUser(email);
+
         return ResponseEntity.ok(
-                Map.of("mensaje", "Usuario " + email + " ha sido habilitado de nuevo.")
+                Map.of("mensaje", "Usuario " + email + " ha sido desbloqueado correctamente.")
         );
     }
+
 
     // =====================================================
     // UPDATE
     // =====================================================
-    @PostMapping(LOCK_USER)
+    @PostMapping(LOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
     public ResponseEntity<Map<String, String>> lockUser(
-            @RequestBody Map<String, String> request
+            @PathVariable String email
     ) {
-        String email = request.get("email");
         userService.lockUser(email);
 
         return ResponseEntity.ok(
                 Map.of("mensaje", "Usuario " + email + " ha sido bloqueado correctamente.")
         );
     }
+
 
 
     @PutMapping(UPDATE_ROLE)

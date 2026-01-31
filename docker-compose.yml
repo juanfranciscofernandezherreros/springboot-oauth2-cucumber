@@ -20,15 +20,3 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: springboot-oauth-app
-    container_name: spring_app
-    ports:
-      - "8087:8087"
-    depends_on:
-      redis:
-        condition: service_healthy
