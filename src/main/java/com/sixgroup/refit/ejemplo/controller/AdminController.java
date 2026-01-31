@@ -1,6 +1,7 @@
 package com.sixgroup.refit.ejemplo.controller;
 
 import com.sixgroup.refit.ejemplo.dto.AdminCreateUserRequest;
+import com.sixgroup.refit.ejemplo.dto.AdminUpdateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.AdminUserListResponse;
 import com.sixgroup.refit.ejemplo.model.Role;
 import com.sixgroup.refit.ejemplo.service.AuthService;
@@ -108,13 +109,33 @@ public class AdminController {
     // =====================================================
     // DELETE
     // =====================================================
-    @DeleteMapping(DELETE_USER)
+    // =====================================================
+// DELETE
+// =====================================================
+    @DeleteMapping(DELETE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:delete')")
     public ResponseEntity<Map<String, String>> deleteUser(
-            @RequestParam String email) {
-        userService.deleteUser(email);
+            @PathVariable Long id) {
+
+        userService.deleteUserById(id);
+
         return ResponseEntity.ok(
-                Map.of("mensaje", "Usuario " + email + " eliminado correctamente.")
+                Map.of("mensaje", "Usuario con id " + id + " eliminado correctamente.")
         );
     }
+
+
+    @PutMapping(UPDATE_USER + "/{id}")
+    @PreAuthorize("hasAuthority('admin:update')")
+    public ResponseEntity<AdminUserListResponse> updateUser(
+            @PathVariable Long id,
+            @RequestBody AdminUpdateUserRequest request
+    ) {
+        AdminUserListResponse response = userService.updateUserByAdmin(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+
+
+
 }

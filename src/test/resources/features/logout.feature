@@ -8,4 +8,4 @@ Feature: Pruebas de Perfil de Usuario
     When cierro la sesión
     Then el sistema responde con código 200
     When intento acceder a mi perfil
-    Then el sistema responde con código 403
+    Then el sistema responde con código 401

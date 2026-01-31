@@ -2,17 +2,15 @@ package com.sixgroup.refit.ejemplo.config;
 
 import com.sixgroup.refit.ejemplo.service.LogoutService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -33,7 +31,7 @@ public class SecurityConfig {
 
         http
                 // =========================
-                // CORS (Security 6)
+                // CORS
                 // =========================
                 .cors(cors -> {})
 
@@ -55,7 +53,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // Preflight
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
                         // Swagger / OpenAPI
                         .requestMatchers(
@@ -64,13 +65,26 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Public auth endpoints
+                        // Auth pública
                         .requestMatchers("/auth/**").permitAll()
 
-                        // Admin endpoints
+                        // 🔥 INVITACIONES PÚBLICAS (CREACIÓN)
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/api/v1/invitations"
+                        ).permitAll()
+
+                        // 🔒 INVITACIONES ADMIN (LISTADO + SSE TIEMPO REAL)
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/v1/admin/invitations",
+                                "/api/v1/admin/invitations/stream"
+                        ).hasRole("ADMIN")
+
+                        // Resto endpoints ADMIN
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                        // Everything else
+                        // Resto protegido
                         .anyRequest().authenticated()
                 )
 
@@ -107,7 +121,7 @@ public class SecurityConfig {
         ));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(false); // JWT por header, no cookies
+        config.setAllowCredentials(false); // JWT por header
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();

@@ -35,7 +35,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // 1️⃣ Sin token → seguimos
+        // 1️⃣ Sin Authorization o sin Bearer → continuamos
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -44,50 +44,55 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
         final String username;
 
+        // 2️⃣ Extraer usuario del token
         try {
             username = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            // Token malformado / inválido
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        // 2️⃣ Ya autenticado → seguimos
+        // 3️⃣ Si ya está autenticado → continuamos
         if (username == null ||
                 SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3️⃣ Cargar usuario
+        // 4️⃣ Cargar usuario
         UserDetails userDetails =
                 userDetailsService.loadUserByUsername(username);
 
-        // 4️⃣ Validación COMPLETA del token
+        // 5️⃣ Validación completa del token
         boolean isTokenValid =
                 jwtService.isTokenValid(jwt, userDetails)
                         && tokenRepository.findByToken(jwt)
                         .map(token -> !token.isExpired() && !token.isRevoked())
                         .orElse(false);
 
-        // 5️⃣ Autenticación
-        if (isTokenValid) {
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-            authToken.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authToken);
+        // 6️⃣ Token inválido → 401
+        if (!isTokenValid) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
 
+        // 7️⃣ Autenticación en el contexto de seguridad
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+
+        authToken.setDetails(
+                new WebAuthenticationDetailsSource()
+                        .buildDetails(request)
+        );
+
+        SecurityContextHolder.getContext()
+                .setAuthentication(authToken);
+
+        // 8️⃣ Continuar cadena
         filterChain.doFilter(request, response);
     }
 }

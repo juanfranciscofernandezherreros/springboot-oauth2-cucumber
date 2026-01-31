@@ -1,5 +1,6 @@
 package com.sixgroup.refit.ejemplo.service;
 
+import com.sixgroup.refit.ejemplo.dto.AdminUpdateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.AdminUserListResponse;
 import com.sixgroup.refit.ejemplo.dto.UpdateUserRequest;
 import com.sixgroup.refit.ejemplo.model.User;
@@ -70,19 +71,21 @@ public class UserService {
 
 
     @Transactional
-    public void deleteUser(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + email));
+    public void deleteUserById(Long id) {
 
-        // PROTECCIÓN: Un Admin no borra a otro Admin
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+
+        // PROTECCIÓN: un Admin no puede borrar a otro Admin
         if (user.getRole() == Role.ADMIN) {
-            log.error("SEGURIDAD: Intento denegado de borrar al administrador {}", email);
+            log.error("SEGURIDAD: Intento denegado de borrar al administrador con id {}", id);
             throw new RuntimeException("No está permitido eliminar a otros administradores.");
         }
 
         userRepository.delete(user);
-        log.info("ADMIN: Usuario {} eliminado.", email);
+        log.info("ADMIN: Usuario con id {} eliminado.", id);
     }
+
 
     @Transactional
     public void updateUserRole(String email, Role newRole) {
@@ -122,4 +125,44 @@ public class UserService {
         log.info("USER: Perfil de {} actualizado.", email);
         return userRepository.save(user);
     }
+
+    @Transactional
+    public AdminUserListResponse updateUserByAdmin(Long id, AdminUpdateUserRequest request) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+
+        // PROTECCIÓN: no modificar a otros administradores
+        if (user.getRole() == Role.ADMIN) {
+            throw new RuntimeException("No está permitido modificar a otros administradores.");
+        }
+
+        if (request.name() != null) {
+            user.setName(request.name());
+        }
+
+        if (request.role() != null) {
+            user.setRole(request.role());
+        }
+
+        if (request.accountNonLocked() != null) {
+            user.setAccountNonLocked(request.accountNonLocked());
+        }
+
+        User updatedUser = userRepository.save(user);
+
+        log.info("ADMIN: Usuario con id {} actualizado.", id);
+
+        return AdminUserListResponse.builder()
+                .id(updatedUser.getId())
+                .name(updatedUser.getName())
+                .email(updatedUser.getEmail())
+                .role(updatedUser.getRole())
+                .accountNonLocked(updatedUser.isAccountNonLocked())
+                .failedAttempt(updatedUser.getFailedAttempt())
+                .build();
+    }
+
+
+
 }

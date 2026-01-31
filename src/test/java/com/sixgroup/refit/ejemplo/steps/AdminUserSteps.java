@@ -1,6 +1,7 @@
 package com.sixgroup.refit.ejemplo.steps;
 
 import com.sixgroup.refit.ejemplo.config.BaseRestConfig;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -10,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+
 import static com.sixgroup.refit.ejemplo.utils.constants.AdminApiPaths.*;
 import static org.hamcrest.Matchers.*;
 
@@ -139,19 +142,15 @@ public class AdminUserSteps extends BaseRestConfig {
                 .put(BASE+UPDATE_ROLE);
     }
 
-    // =====================================================
-    // DELETE USER -> DELETE /api/v1/admin/delete?email=
-    // =====================================================
-
-    @When("el administrador elimina el usuario con email {string}")
-    public void el_administrador_elimina_usuario(String email) {
+    @When("el administrador elimina el usuario con id {long}")
+    public void el_administrador_elimina_usuario_por_id(Long id) {
 
         configureRestAssured();
 
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
-                .queryParam("email", email)
-                .delete(BASE+DELETE_USER);
+                .pathParam("id", id)
+                .delete(BASE + DELETE_USER + "/{id}");
     }
 
     // =====================================================
@@ -178,6 +177,35 @@ public class AdminUserSteps extends BaseRestConfig {
         SerenityRest.then()
                 .body("$", notNullValue())
                 .body("$", is(instanceOf(List.class)));
+    }
+
+    // =====================================================
+// UPDATE USER -> PUT /api/v1/admin/update-user/{email}
+// =====================================================
+
+    @When("el administrador actualiza el usuario con id {long}")
+    public void el_administrador_actualiza_el_usuario_por_id(Long id, DataTable dataTable) {
+
+        configureRestAssured();
+
+        Map<String, String> request = dataTable.asMap(String.class, String.class);
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .contentType("application/json")
+                .pathParam("id", id)
+                .body("""
+                {
+                  "name": "%s",
+                  "role": "%s",
+                  "accountNonLocked": %s
+                }
+                """.formatted(
+                        request.get("name"),
+                        request.get("role"),
+                        request.get("accountNonLocked")
+                ))
+                .put(BASE + UPDATE_USER + "/{id}");
     }
 
     private String encode(String value) {

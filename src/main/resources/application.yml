@@ -2,18 +2,28 @@ server:
   port: 8087
 application:
   security:
-    redis-enabled: true
+    redis-enabled: false
     ip-lock:
-      enabled: true
+      enabled: false
       max-attempts: ${SECURITY_MAX_ATTEMPTS:3}
       lock-time-minutes: ${SECURITY_LOCK_TIME:5}
     jwt:
       secret-key: McvbIKwPaVjhmKBwFUdHDXzvfWeAZgaJ8XJr6cBsvNkPI9VUvAWw7GzFMV6ZhHsI
-      expiration: 60000
+      expiration: 315360000000
       refresh-token:
-        expiration: 300000
+        expiration: 315360000000
 
 spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        auto-declare: true
+      direct:
+        auto-declare: true
   data:
     redis:
       host: localhost

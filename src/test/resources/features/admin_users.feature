@@ -62,5 +62,17 @@ Feature: Gestión de usuarios por administrador
   # ELIMINAR USUARIO
   # =====================================================
   Scenario: El administrador elimina un usuario
-    When el administrador elimina el usuario con email "usuario_paraborrar@login.com"
+    When el administrador elimina el usuario con id 12
     Then la respuesta tiene código 200
+
+
+      # =====================================================
+  # ACTUALIZAR USUARIO
+  # =====================================================
+  Scenario: El administrador actualiza los datos de un usuario
+    When el administrador actualiza el usuario con id 7
+      | name             | Nuevo Nombre Usuario |
+      | role             | USER                 |
+      | accountNonLocked | false                 |
+    Then la respuesta tiene código 200
+

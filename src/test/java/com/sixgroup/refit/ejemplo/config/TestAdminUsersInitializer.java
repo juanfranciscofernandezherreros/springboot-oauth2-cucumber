@@ -88,9 +88,31 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 "Locked User"
         );
 
+        User userToUpdate = createUserIfNotExistsAndReturn(
+                "user_to_update@test.com",
+                "123",
+                "UsuarioParaActualizar"
+        );
 
+        log.info("🆔 [TEST] ID usuario para actualizar: {}", userToUpdate.getId());
 
         log.info("✅ [TEST] Inicialización de usuarios finalizada");
+
+        User userToDelete = createUserIfNotExistsAndReturn(
+                "userstodelete@test.com",
+                "123",
+                "UsuarioParaBorrar"
+        );
+
+        log.info("🗑️ [TEST] ID usuario para borrar: {} {} ", userToDelete.getId() , userToDelete.getEmail());
+
+        createUserIfNotExists(
+                "profile_user@test.com",
+                "123",
+                "UsuarioPerfil"
+        );
+
+
     }
 
     // =====================================================
@@ -167,4 +189,26 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
         userRepository.save(lockedUser);
         log.info("🔒 [TEST] Usuario bloqueado creado: {}", email);
     }
+
+    private User createUserIfNotExistsAndReturn(String email, String rawPassword, String name) {
+
+        return userRepository.findByEmail(email).orElseGet(() -> {
+
+            User user = User.builder()
+                    .name(name)
+                    .email(email)
+                    .password(passwordEncoder.encode(rawPassword))
+                    .role(Role.USER)
+                    .failedAttempt(0)
+                    .lockCount(0)
+                    .accountNonLocked(true)
+                    .lockTime(null)
+                    .build();
+
+            User saved = userRepository.save(user);
+            log.info("👤 [TEST] Usuario creado para update: {} (id={})", email, saved.getId());
+            return saved;
+        });
+    }
+
 }
