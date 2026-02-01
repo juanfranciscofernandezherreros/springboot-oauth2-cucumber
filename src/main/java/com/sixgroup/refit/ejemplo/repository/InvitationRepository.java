@@ -11,37 +11,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
+public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
-    // =====================================================
-    // ADMIN / CREACIÓN
-    // =====================================================
+    // Para la pestaña de "Pendientes"
+    List<Invitation> findByStatusOrderByCreatedAtDesc(InvitationStatus status);
+
+    // Para la pestaña de "Histórico" (Cualquier estado que no sea PENDING)
+    List<Invitation> findByStatusNotOrderByCreatedAtDesc(InvitationStatus status);
+
+    // Para el contador (2)
+    long countByStatus(InvitationStatus status);
 
     boolean existsByEmailAndStatus(String email, InvitationStatus status);
-
-    // =====================================================
-    // ADMIN PANEL
-    // =====================================================
-
-    Optional<Invitation> findByToken(String token);
-
-    List<Invitation> findAllByStatus(InvitationStatus status);
-
-    // =====================================================
-    // USO PÚBLICO / VALIDACIONES
-    // =====================================================
-
-    Optional<Invitation> findByTokenAndStatus(
-            String token,
-            InvitationStatus status
-    );
-
-    // =====================================================
-    // EXPIRACIÓN AUTOMÁTICA
-    // =====================================================
-
-    List<Invitation> findAllByStatusAndExpiresAtBefore(
-            InvitationStatus status,
-            Instant now
-    );
 }
