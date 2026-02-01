@@ -20,18 +20,3 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq_container
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5

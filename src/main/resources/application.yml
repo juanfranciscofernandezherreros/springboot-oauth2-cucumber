@@ -14,16 +14,6 @@ application:
         expiration: 315360000000
 
 spring:
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    listener:
-      simple:
-        auto-declare: true
-      direct:
-        auto-declare: true
   data:
     redis:
       host: localhost

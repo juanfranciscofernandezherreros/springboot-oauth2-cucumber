@@ -28,7 +28,6 @@ public class InvitationSteps extends BaseRestConfig {
     public void creo_una_nueva_invitacion_para_el_email(String email) {
         // Creamos el DTO de la petición
         CreateInvitationRequest request = new CreateInvitationRequest(email, Role.USER);
-
         // Realizamos la llamada POST pública (sin cabecera de autenticación)
         SerenityRest.given()
                 .contentType("application/json")

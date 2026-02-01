@@ -28,31 +28,6 @@ public class Main {
     }
 
     /**
-     * 1️⃣ Inicialización de infraestructura RabbitMQ al arrancar.
-     * Esto asegura que el Exchange, la Cola y el Binding existan antes de recibir peticiones.
-     */
-    @Bean
-    public ApplicationRunner initializeRabbit(
-            RabbitAdmin rabbitAdmin,
-            Queue invitationQueue,
-            TopicExchange invitationExchange,
-            Binding invitationBinding) {
-
-        return args -> {
-            try {
-                log.info("Checking RabbitMQ infrastructure...");
-                rabbitAdmin.declareExchange(invitationExchange);
-                rabbitAdmin.declareQueue(invitationQueue);
-                rabbitAdmin.declareBinding(invitationBinding);
-                log.info("✅ RabbitMQ: Exchange y Queue declarados correctamente.");
-            } catch (Exception e) {
-                log.error("❌ ERROR: No se pudo conectar con RabbitMQ. " +
-                        "Asegúrate de que el servicio esté corriendo en tu PC local.");
-            }
-        };
-    }
-
-    /**
      * 2️⃣ Inicialización de usuarios por defecto en Base de Datos.
      */
     @Bean
