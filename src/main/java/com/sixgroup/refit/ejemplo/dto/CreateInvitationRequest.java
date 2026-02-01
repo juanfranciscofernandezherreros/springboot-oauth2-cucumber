@@ -1,9 +1,10 @@
 package com.sixgroup.refit.ejemplo.dto;
 
-import com.sixgroup.refit.ejemplo.model.Role;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 public record CreateInvitationRequest(
-        String email,
-        Role role
+        @NotBlank @Email String email,
+        @NotBlank String name,
+        @NotBlank String description
 ) {}
-

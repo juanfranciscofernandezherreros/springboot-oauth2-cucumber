@@ -23,6 +23,12 @@ public class Invitation {
     @Column(nullable = false)
     private String email;
 
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String description;
+
     @Enumerated(EnumType.STRING)
     private Role role;
 
