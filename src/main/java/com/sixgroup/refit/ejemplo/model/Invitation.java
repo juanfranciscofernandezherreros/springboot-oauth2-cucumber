@@ -18,7 +18,7 @@ public class Invitation {
 
     @Id
     @GeneratedValue
-    private UUID id;
+    private Long id;
 
     @Column(nullable = false)
     private String email;

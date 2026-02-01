@@ -67,6 +67,7 @@ public class InvitationController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+
     // Para el histórico
     @GetMapping("/history")
     public ResponseEntity<List<Invitation>> getHistory() {
