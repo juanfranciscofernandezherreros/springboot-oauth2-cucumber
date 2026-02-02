@@ -11,6 +11,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    restart: unless-stopped
     networks:
       - app-network
     ports:
@@ -23,19 +24,19 @@ services:
       retries: 5
 
   app:
-    image: juanfranciscofernandez/app:latest
+    image: juanfranciscofernandez/my-app:latest
     container_name: app
+    restart: unless-stopped
     networks:
       - app-network
-    restart: unless-stopped
+
     depends_on:
       redis:
         condition: service_healthy
 
     ports:
-      - "8087:8080"
+      - "8087:8087"
 
     environment:
-      SPRING_PROFILES_ACTIVE: h2
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
