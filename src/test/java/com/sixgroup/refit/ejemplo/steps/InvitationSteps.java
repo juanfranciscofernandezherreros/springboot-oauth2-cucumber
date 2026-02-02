@@ -2,54 +2,174 @@ package com.sixgroup.refit.ejemplo.steps;
 
 import com.sixgroup.refit.ejemplo.config.BaseRestConfig;
 import com.sixgroup.refit.ejemplo.dto.CreateInvitationRequest;
-import com.sixgroup.refit.ejemplo.model.Role;
+import com.sixgroup.refit.ejemplo.model.Invitation;
+import com.sixgroup.refit.ejemplo.model.InvitationStatus;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import net.serenitybdd.rest.SerenityRest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import static org.awaitility.Awaitility.await;
-import java.util.concurrent.TimeUnit;
+import static org.hamcrest.Matchers.*;
 
 public class InvitationSteps extends BaseRestConfig {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationSteps.class);
 
-    @Given("que el sistema está listo para recibir invitaciones")
-    public void que_el_sistema_esta_listo_para_recibir_invitaciones() {
-        // Configuramos la URL base y puerto desde BaseRestConfig
-        configureRestAssured();
-        log.info("🔧 Infraestructura de tests configurada.");
+    @Autowired
+    private TestContexts testContext;
+
+    private Long invitationId;
+    private String lastEmailUsed;
+
+    /* ======================================================
+       GIVEN — ESTADO
+       ====================================================== */
+
+    @Given("existe una invitación pendiente")
+    public void existe_una_invitacion_pendiente() {
+
+        lastEmailUsed = "pending-" + System.currentTimeMillis() + "@sixgroup.com";
+
+        CreateInvitationRequest request =
+                new CreateInvitationRequest(
+                        lastEmailUsed,
+                        "Usuario Pendiente",
+                        "Invitación pendiente"
+                );
+
+        Invitation invitation =
+                SerenityRest.given()
+                        .contentType("application/json")
+                        .body(request)
+                        .when()
+                        .post("/api/v1/admin/invitations") // público
+                        .then()
+                        .statusCode(201)
+                        .extract()
+                        .as(Invitation.class);
+
+        invitationId = invitation.getId();
+
+        log.info("📌 Invitación pendiente creada con id {}", invitationId);
     }
+
+    @Given("existen invitaciones aceptadas o expiradas")
+    public void existen_invitaciones_aceptadas_o_expiradas() {
+
+        existe_una_invitacion_pendiente();
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .when()
+                .patch("/api/v1/admin/invitations/{id}/accept", invitationId)
+                .then()
+                .statusCode(200);
+
+        log.info("📌 Invitación aceptada para histórico");
+    }
+
+    /* ======================================================
+       WHEN — ACCIONES
+       ====================================================== */
 
     @When("creo una nueva invitación para el email {string}")
     public void creo_una_nueva_invitacion_para_el_email(String email) {
-        // Creamos el DTO de la petición
-        CreateInvitationRequest request = new CreateInvitationRequest("","","");
-        // Realizamos la llamada POST pública (sin cabecera de autenticación)
+
+        lastEmailUsed = email;
+
+        CreateInvitationRequest request =
+                new CreateInvitationRequest(
+                        email,
+                        "Usuario Test",
+                        "Invitación de prueba"
+                );
+
         SerenityRest.given()
                 .contentType("application/json")
                 .body(request)
                 .when()
-                .post("/api/v1/invitations");
+                .post("/api/v1/admin/invitations");
 
-        log.info("📡 Petición POST enviada para el email: {}", email);
+        log.info("📡 POST invitación enviada para {}", email);
     }
 
-    @Then("la invitación debe ser aceptada correctamente")
-    public void la_invitacion_debe_ser_aceptada_correctamente() {
-        // Verificamos el código 202 que devuelve tu controlador
+    @When("el administrador consulta las invitaciones pendientes")
+    public void el_administrador_consulta_las_invitaciones_pendientes() {
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .when()
+                .get("/api/v1/admin/invitations/pending");
+
+        log.info("📡 GET invitaciones pendientes (admin)");
+    }
+
+    @When("el administrador acepta la invitación")
+    public void el_administrador_acepta_la_invitacion() {
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .when()
+                .patch("/api/v1/admin/invitations/{id}/accept", invitationId);
+
+        log.info("📡 PATCH aceptar invitación {}", invitationId);
+    }
+
+    @When("el administrador consulta el histórico de invitaciones")
+    public void el_administrador_consulta_el_historico_de_invitaciones() {
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .when()
+                .get("/api/v1/admin/invitations/history");
+
+        log.info("📡 GET histórico de invitaciones (admin)");
+    }
+
+    /* ======================================================
+       THEN — ASSERTS
+       ====================================================== */
+
+    @Then("la invitación se crea correctamente")
+    public void la_invitacion_se_crea_correctamente() {
+
         SerenityRest.then()
-                .statusCode(202);
+                .statusCode(201)
+                .body("email", equalTo(lastEmailUsed))
+                .body("status", equalTo(InvitationStatus.PENDING.name()));
 
-        log.info("✅ El servidor respondió con 202 Accepted.");
+        log.info("✅ Invitación creada correctamente");
+    }
 
-        // Verificación extra: Esperamos a que el sistema asíncrono termine
-        // Esto asegura que RabbitMQ tuvo tiempo de mover el mensaje
-        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
-            log.info("⏱️ Verificación de flujo asíncrono completada.");
-        });
+    @Then("el sistema rechaza la invitación por duplicada")
+    public void el_sistema_rechaza_la_invitacion_por_duplicada() {
+
+        SerenityRest.then()
+                .statusCode(409);
+
+        log.info("⛔ Invitación duplicada rechazada");
+    }
+
+    @Then("se devuelve una lista de invitaciones pendientes")
+    public void se_devuelve_una_lista_de_invitaciones_pendientes() {
+
+        SerenityRest.then()
+                .statusCode(200)
+                .body("$", not(empty()));
+
+        log.info("📄 Lista de invitaciones pendientes devuelta");
+    }
+
+    @Then("el sistema devuelve el histórico correctamente")
+    public void el_sistema_devuelve_el_historico_correctamente() {
+
+        SerenityRest.then()
+                .statusCode(200)
+                .body("$", notNullValue());
+
+        log.info("📚 Histórico de invitaciones devuelto");
     }
 }

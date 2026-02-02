@@ -31,28 +31,28 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // =========================
-                // CORS & CSRF
-                // =========================
+                /* =========================
+                   CORS & CSRF
+                   ========================= */
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
 
-                // =========================
-                // SESSION (JWT = STATELESS)
-                // =========================
+                /* =========================
+                   SESSION (JWT = STATELESS)
+                   ========================= */
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // =========================
-                // AUTHORIZATION
-                // =========================
+                /* =========================
+                   AUTHORIZATION
+                   ========================= */
                 .authorizeHttpRequests(auth -> auth
 
-                        // 1. Preflight (OPTIONS)
+                        // Preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 2. Swagger / OpenAPI / Recursos Estáticos
+                        // Swagger / recursos
                         .requestMatchers(
                                 "/",
                                 "/index.html",
@@ -62,67 +62,69 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // 3. Auth pública
+                        // Auth pública
                         .requestMatchers("/auth/**").permitAll()
 
-                        // 4. 🔥 WEBSOCKETS (Permitir Handshake de STOMP y SockJS)
+                        // WebSockets
                         .requestMatchers("/ws-invitations/**").permitAll()
 
-                        // 5. INVITACIONES PÚBLICAS (Endpoint que probaste con cURL)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/invitations").permitAll()
+                        // 🔓 CREATE INVITATION (ADMIN PATH PERO PÚBLICO)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/invitations")
+                        .permitAll()
 
-                        // 6. INVITACIONES ADMIN (Protegidas por Rol)
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v1/admin/invitations",
-                                "/api/v1/admin/invitations/stream"
-                        ).hasRole("ADMIN")
+                        // 🔒 RESTO DE INVITATIONS ADMIN
+                        .requestMatchers("/api/v1/admin/invitations/**")
+                        .hasRole("ADMIN")
 
-                        // 7. Resto de la API Admin
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        // 🔒 RESTO API ADMIN
+                        .requestMatchers("/api/v1/admin/**")
+                        .hasRole("ADMIN")
 
-                        // 8. Cualquier otra petición requiere login
+                        // Cualquier otra → autenticada
                         .anyRequest().authenticated()
                 )
 
-                // =========================
-                // AUTH PROVIDER + JWT FILTER
-                // =========================
+                /* =========================
+                   JWT
+                   ========================= */
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // =========================
-                // LOGOUT (Ajustado para 401/Success)
-                // =========================
+                /* =========================
+                   LOGOUT
+                   ========================= */
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .addLogoutHandler(logoutHandler)
                         .logoutSuccessHandler((request, response, authentication) -> {
                             SecurityContextHolder.clearContext();
-                            response.setStatus(200); // O 401 si prefieres forzar re-login
+                            response.setStatus(200);
                         })
                 );
 
         return http.build();
     }
 
-    // =========================
-    // CORS CONFIGURATION
-    // =========================
+    /* =========================
+       CORS CONFIG
+       ========================= */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
 
-        // Permitimos localhost:3000 (React) y localhost:8087 (Propio backend)
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8087"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:8087"
+        ));
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
-
-        // Permitir credenciales es vital para SockJS
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
