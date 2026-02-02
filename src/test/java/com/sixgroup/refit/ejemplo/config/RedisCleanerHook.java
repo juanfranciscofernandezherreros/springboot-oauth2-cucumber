@@ -4,7 +4,7 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-
+import org.springframework.stereotype.Component;
 import java.util.Objects;
 
 public class RedisCleanerHook {
