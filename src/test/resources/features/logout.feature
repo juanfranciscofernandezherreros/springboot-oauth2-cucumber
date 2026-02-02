@@ -1,11 +1,19 @@
-@logout
-Feature: Pruebas de Perfil de Usuario
+@auth @logout
+Feature: Logout de sesión
 
-  Scenario: Login, acceso al perfil, logout y nuevo acceso
-    Given reinicio el entorno y me autentico con usuario "fresh_user@test.com" y password "123" y rol "USER"
-    When intento acceder a mi perfil
-    Then recibo mi perfil de usuario correctamente
-    When cierro la sesión
-    Then el sistema responde con código 200
-    When intento acceder a mi perfil
-    Then el sistema responde con código 401
+  Como usuario autenticado
+  Quiero cerrar sesión
+  Para invalidar mi access token
+
+  Background:
+    Given el administrador está autenticado
+
+  Scenario: El usuario hace logout correctamente
+    When hago una petición de logout
+    Then la respuesta tiene código 200
+
+  Scenario: El token no es válido después del logout
+    Given el administrador está autenticado
+    When hago una petición de logout
+    And intento acceder a un endpoint protegido
+    Then la respuesta tiene código 401
