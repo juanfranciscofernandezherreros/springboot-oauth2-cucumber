@@ -38,4 +38,5 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
         envers:
           audit_table_suffix: _aud
+
           store_data_at_delete: true
