@@ -19,10 +19,10 @@ spring:
       host: redis
       port: 6379
   datasource:
-    url: jdbc:postgresql://postgres:5432/appdb
-    username: app
-    password: apppass
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
   h2:
     console:
       enabled: true

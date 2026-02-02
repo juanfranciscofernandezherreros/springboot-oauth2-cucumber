@@ -1,18 +1,18 @@
-version: '3.8'
+version: "3.8"
 
 networks:
   app-network:
     driver: bridge
 
 volumes:
-  postgres_data:
   redis_data:
 
 services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    networks: [ app-network ]
+    networks:
+      - app-network
     ports:
       - "6379:6379"
     volumes:
@@ -22,40 +22,20 @@ services:
       interval: 5s
       retries: 5
 
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    networks: [ app-network ]
-    environment:
-      POSTGRES_DB: appdb
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: apppass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "app"]
-      interval: 5s
-      retries: 5
-
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: springboot-app
-    container_name: spring_app
-    networks: [ app-network ]
-    ports:
-      - "8087:8087"
+    image: juanfranciscofernandez/app:latest
+    container_name: app
+    networks:
+      - app-network
+    restart: unless-stopped
     depends_on:
       redis:
         condition: service_healthy
-      postgres:
-        condition: service_healthy
+
+    ports:
+      - "8087:8080"
+
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/appdb
-      SPRING_DATASOURCE_USERNAME: app
-      SPRING_DATASOURCE_PASSWORD: apppass
+      SPRING_PROFILES_ACTIVE: h2
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
