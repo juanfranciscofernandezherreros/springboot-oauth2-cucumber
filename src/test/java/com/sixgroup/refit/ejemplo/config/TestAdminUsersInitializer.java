@@ -47,6 +47,16 @@ public class TestAdminUsersInitializer implements ApplicationRunner {
                 "UsuarioQueVaAserActualizado"
         );
 
+        // =====================
+// NUEVO USER
+// =====================
+        createUserIfNotExists(
+                "new.user@test.com",
+                "User123!",
+                "Test User"
+        );
+
+
         createUserIfNotExists(
                 "fresh_user@test.com",
                 "123",

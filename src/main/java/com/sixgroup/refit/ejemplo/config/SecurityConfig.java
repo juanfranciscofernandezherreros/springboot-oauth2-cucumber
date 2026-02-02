@@ -49,43 +49,38 @@ public class SecurityConfig {
                    ========================= */
                 .authorizeHttpRequests(auth -> auth
 
-                        // Preflight
+                        // 1. Recursos Públicos y Preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Swagger / recursos
                         .requestMatchers(
                                 "/",
                                 "/index.html",
                                 "/static/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/auth/**",
+                                "/ws-invitations/**"
                         ).permitAll()
 
-                        // Auth pública
-                        .requestMatchers("/auth/**").permitAll()
+                        // 2. Invitaciones (Configuración específica)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/invitations").permitAll()
+                        .requestMatchers("/api/v1/admin/invitations/**").hasRole("ADMIN")
 
-                        // WebSockets
-                        .requestMatchers("/ws-invitations/**").permitAll()
+                        // 3. 🔒 GESTIÓN DE PERFIL (Lo que pediste)
+                        // Solo el rol USER puede editar su perfil
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/users/update").hasRole("USER")
+                        // Consultar el perfil requiere estar autenticado (cualquier rol)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
 
-                        // 🔓 CREATE INVITATION (ADMIN PATH PERO PÚBLICO)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/admin/invitations")
-                        .permitAll()
+                        // 4. 🔒 ADMIN AREA
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                        // 🔒 RESTO DE INVITATIONS ADMIN
-                        .requestMatchers("/api/v1/admin/invitations/**")
-                        .hasRole("ADMIN")
-
-                        // 🔒 RESTO API ADMIN
-                        .requestMatchers("/api/v1/admin/**")
-                        .hasRole("ADMIN")
-
-                        // Cualquier otra → autenticada
+                        // 5. Resto de la API
                         .anyRequest().authenticated()
                 )
 
                 /* =========================
-                   JWT
+                   JWT & AUTH PROVIDER
                    ========================= */
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -110,21 +105,17 @@ public class SecurityConfig {
        ========================= */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
                 "http://localhost:8087"
         ));
-        config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }

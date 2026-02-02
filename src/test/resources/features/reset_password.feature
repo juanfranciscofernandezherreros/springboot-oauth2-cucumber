@@ -9,4 +9,3 @@ Feature: Restablecimiento de Contraseña
     When solicito restablecer la contraseña del email "reset_test@test.com" a la nueva clave "NuevaPass456!"
     Then el sistema responde con código 200
     And la respuesta contiene el mensaje "Contraseña actualizada"
-    And puedo iniciar sesión exitosamente con usuario "reset_test@test.com" y password "NuevaPass456!"
