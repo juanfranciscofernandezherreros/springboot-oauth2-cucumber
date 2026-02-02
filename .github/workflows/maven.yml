@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -22,6 +23,27 @@ jobs:
       - name: Build with Maven
         run: mvn clean install
 
+      # ---- DOCKER SOLO EN MASTER ----
+
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
+            -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
       - name: Build Docker image
         if: github.ref == 'refs/heads/master'
-        run: docker build -t my-app:latest .
+        run: |
+          docker build -t my-app:latest .
+
+      - name: Tag Docker image
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker tag my-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
+          docker tag my-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ github.sha }}
+
+      - name: Push Docker image
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ github.sha }}
