@@ -1,12 +1,15 @@
 package com.sixgroup.refit.ejemplo.controller;
+
 import com.sixgroup.refit.ejemplo.dto.CreateInvitationRequest;
 import com.sixgroup.refit.ejemplo.model.Invitation;
 import com.sixgroup.refit.ejemplo.model.InvitationStatus;
 import com.sixgroup.refit.ejemplo.model.Role;
 import com.sixgroup.refit.ejemplo.repository.InvitationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,23 +18,29 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/invitations")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')") // 🛡️ Seguridad global: Solo ADMIN accede a este controlador
 public class InvitationController {
 
     private final InvitationRepository invitationRepository;
 
+    // =====================================================
+    // CREAR INVITACIÓN
+    // =====================================================
     @PostMapping
+    @PreAuthorize("hasAuthority('admin:create')")
     @Transactional
-    public ResponseEntity<Invitation> createInvitation(@RequestBody CreateInvitationRequest request) {
+    public ResponseEntity<?> createInvitation(@RequestBody CreateInvitationRequest request) {
 
-        // 1. Evitar spam de invitaciones al mismo correo si hay una pendiente
+        // Evitar duplicados en estado PENDING para el mismo email
         if (invitationRepository.existsByEmailAndStatus(request.email(), InvitationStatus.PENDING)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Ya existe una invitación pendiente para este correo.");
         }
 
-        // 2. Mapeo y persistencia
         Invitation invitation = Invitation.builder()
                 .email(request.email())
                 .name(request.name())
@@ -44,51 +53,56 @@ public class InvitationController {
                 .build();
 
         Invitation saved = invitationRepository.save(invitation);
+        log.info("ADMIN: Nueva invitación creada para {} con ID {}", saved.getEmail(), saved.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // Obtener todas las invitaciones pendientes (Para la tabla principal)
+    // =====================================================
+    // LISTADOS (PENDIENTES Y HISTÓRICO)
+    // =====================================================
+
     @GetMapping("/pending")
+    @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getPendingInvitations() {
         return ResponseEntity.ok(invitationRepository.findByStatusOrderByCreatedAtDesc(InvitationStatus.PENDING));
     }
 
-    // Acción: "Revisar Perfil" -> Aceptar Invitación
-    @PatchMapping("/{id}/accept")
-    @Transactional
-    public ResponseEntity<Void> acceptInvitation(@PathVariable Long id) {
-        return invitationRepository.findById(id)
-                .map(invitation -> {
-                    invitation.setStatus(InvitationStatus.ACCEPTED);
-                    invitationRepository.save(invitation);
-                    return ResponseEntity.ok().<Void>build();
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PatchMapping("/{id}/deny")
-    @Transactional
-    public ResponseEntity<Void> dennyInvitation(@PathVariable Long id) {
-        return invitationRepository.findById(id)
-                .map(invitation -> {
-                    // Validación opcional: solo rechazar si está PENDING
-                    if (!invitation.getStatus().equals(InvitationStatus.PENDING)) {
-                        return ResponseEntity.badRequest().<Void>build();
-                    }
-
-                    invitation.setStatus(InvitationStatus.REJECTED);
-                    invitationRepository.save(invitation);
-                    return ResponseEntity.ok().<Void>build();
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-
-
-    // Para el histórico
     @GetMapping("/history")
+    @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getHistory() {
         return ResponseEntity.ok(invitationRepository.findByStatusNotOrderByCreatedAtDesc(InvitationStatus.PENDING));
+    }
+
+    // =====================================================
+    // GESTIÓN DE ESTADOS (MÁQUINA DE GRAFOS)
+    // =====================================================
+
+
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('admin:update')")
+    @Transactional
+    public ResponseEntity<?> updateStatus(
+            @PathVariable Long id,
+            @RequestParam InvitationStatus newStatus) {
+
+        return invitationRepository.findById(id)
+                .map(invitation -> {
+                    // Validamos la transición según el grafo definido en el Enum
+                    if (!invitation.getStatus().canTransitionTo(newStatus)) {
+                        log.warn("ADMIN: Intento de transición inválida de {} a {} para la invitación {}",
+                                invitation.getStatus(), newStatus, id);
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body("Transición no permitida: de " + invitation.getStatus() + " a " + newStatus);
+                    }
+
+                    invitation.setStatus(newStatus);
+                    invitationRepository.save(invitation);
+                    log.info("ADMIN: Invitación {} actualizada a estado {}", id, newStatus);
+
+                    return ResponseEntity.ok("Estado actualizado correctamente a " + newStatus);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

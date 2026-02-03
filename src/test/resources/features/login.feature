@@ -9,3 +9,9 @@ Feature: Autenticación de Usuarios (Login)
     Examples:
       | email             | password     | role       |
       | usuario@login.com | passLogin123 | USER  |
+
+  Scenario: Cambio de contraseña exitoso
+    Given reinicio el entorno y me autentico con usuario "reset_test@test.com" y password "PassActual123" y rol "USER"
+    When solicito restablecer la contraseña del email "reset_test@test.com" a la nueva clave "NuevaPass456!"
+    Then el sistema responde con código 200
+    And la respuesta contiene el mensaje "Contraseña actualizada"
