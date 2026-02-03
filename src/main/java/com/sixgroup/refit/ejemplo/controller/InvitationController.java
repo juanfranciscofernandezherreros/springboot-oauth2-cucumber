@@ -67,6 +67,24 @@ public class InvitationController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PatchMapping("/{id}/deny")
+    @Transactional
+    public ResponseEntity<Void> dennyInvitation(@PathVariable Long id) {
+        return invitationRepository.findById(id)
+                .map(invitation -> {
+                    // Validación opcional: solo rechazar si está PENDING
+                    if (!invitation.getStatus().equals(InvitationStatus.PENDING)) {
+                        return ResponseEntity.badRequest().<Void>build();
+                    }
+
+                    invitation.setStatus(InvitationStatus.REJECTED);
+                    invitationRepository.save(invitation);
+                    return ResponseEntity.ok().<Void>build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+
 
     // Para el histórico
     @GetMapping("/history")

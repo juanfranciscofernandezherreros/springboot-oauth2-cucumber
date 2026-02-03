@@ -43,6 +43,16 @@ Feature: Gestión de Invitaciones
     Then la respuesta tiene código 200
 
   # =====================================================
+    # RECHAZAR INVITACIÓN
+    # PATCH /api/v1/admin/invitations/{id}/deny
+    # =====================================================
+
+  Scenario: El administrador rechaza una invitación pendiente
+    Given existe una invitación pendiente
+    When el administrador rechaza la invitación
+    Then la respuesta tiene código 200
+
+  # =====================================================
   # HISTÓRICO DE INVITACIONES
   # GET /api/v1/admin/invitations/history
   # =====================================================
