@@ -2,6 +2,7 @@ package com.sixgroup.refit.ejemplo.controller;
 
 import com.sixgroup.refit.ejemplo.dto.UpdateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.UserResponse;
+import com.sixgroup.refit.ejemplo.dto.UserStatsResponse;
 import com.sixgroup.refit.ejemplo.model.User;
 import com.sixgroup.refit.ejemplo.service.UserService;
 import com.sixgroup.refit.ejemplo.utils.constants.UserEndpoints;

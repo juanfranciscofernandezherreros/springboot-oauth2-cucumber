@@ -208,6 +208,32 @@ public class AdminUserSteps extends BaseRestConfig {
                 .put(BASE + UPDATE_USER + "/{id}");
     }
 
+    // =====================================================
+    // USER STATS -> GET /api/v1/admin/stats
+    // =====================================================
+
+    @When("el administrador solicita las estadísticas de usuarios")
+    public void el_administrador_solicita_las_estadisticas_de_usuarios() {
+        configureRestAssured();
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .get(BASE + STATS);
+    }
+
+    @And("las estadísticas muestran un total de usuarios mayor o igual a {int}")
+    public void las_estadisticas_muestran_un_total_de_usuarios(int min) {
+        SerenityRest.then()
+                .body("totalUsers", is(greaterThanOrEqualTo(min)));
+    }
+
+    @And("se visualiza el conteo de bloqueados e invitaciones pendientes")
+    public void se_visualiza_el_conteo_de_bloqueados_e_invitaciones() {
+        SerenityRest.then()
+                .body("blockedUsers", notNullValue())
+                .body("pendingInvitations", notNullValue());
+    }
+
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }

@@ -20,6 +20,5 @@ public final class AdminApiPaths {
     public static final String DELETE_USER = "/delete";
     public static final String LOCK_USER = "/lock-user";
     public static final String UPDATE_USER = "/update-user";
-
-
+    public static final String STATS = "/stats";
 }

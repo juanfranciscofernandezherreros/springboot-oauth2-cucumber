@@ -3,6 +3,7 @@ package com.sixgroup.refit.ejemplo.service;
 import com.sixgroup.refit.ejemplo.dto.AdminUpdateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.AdminUserListResponse;
 import com.sixgroup.refit.ejemplo.dto.UpdateUserRequest;
+import com.sixgroup.refit.ejemplo.dto.UserStatsResponse;
 import com.sixgroup.refit.ejemplo.model.User;
 import com.sixgroup.refit.ejemplo.repository.UserRepository;
 import com.sixgroup.refit.ejemplo.model.Role;
@@ -19,7 +20,6 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-
 
     public List<AdminUserListResponse> getAllUsers() {
         return userRepository.findAll()
@@ -163,6 +163,12 @@ public class UserService {
                 .build();
     }
 
+    public UserStatsResponse getUserStatistics() {
+        long total = userRepository.count();
+        long blocked = userRepository.countByAccountNonLockedFalse();
+        long pending = userRepository.countByPasswordIsNull();
+        return new UserStatsResponse(total, blocked, pending);
+    }
 
 
 }

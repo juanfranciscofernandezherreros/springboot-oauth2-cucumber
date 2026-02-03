@@ -76,3 +76,12 @@ Feature: Gestión de usuarios por administrador
       | accountNonLocked | false                 |
     Then la respuesta tiene código 200
 
+  # =====================================================
+  # CONSULTAR ESTADÍSTICAS
+  # =====================================================
+  Scenario: El administrador consulta las estadísticas globales de usuarios
+    When el administrador solicita las estadísticas de usuarios
+    Then la respuesta tiene código 200
+    And las estadísticas muestran un total de usuarios mayor o igual a 0
+    And se visualiza el conteo de bloqueados e invitaciones pendientes
+

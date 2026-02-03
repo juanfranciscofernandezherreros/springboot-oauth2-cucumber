@@ -3,6 +3,7 @@ package com.sixgroup.refit.ejemplo.controller;
 import com.sixgroup.refit.ejemplo.dto.AdminCreateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.AdminUpdateUserRequest;
 import com.sixgroup.refit.ejemplo.dto.AdminUserListResponse;
+import com.sixgroup.refit.ejemplo.dto.UserStatsResponse;
 import com.sixgroup.refit.ejemplo.model.Role;
 import com.sixgroup.refit.ejemplo.service.AuthService;
 import com.sixgroup.refit.ejemplo.model.User;
@@ -90,8 +91,6 @@ public class AdminController {
         );
     }
 
-
-
     @PutMapping(UPDATE_ROLE)
     @PreAuthorize("hasAuthority('admin:update')")
     public ResponseEntity<Map<String, String>> updateRole(
@@ -135,7 +134,10 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-
+    @GetMapping(STATS)
+    public ResponseEntity<UserStatsResponse> getUserStats() {
+        return ResponseEntity.ok(userService.getUserStatistics());
+    }
 
 
 }
