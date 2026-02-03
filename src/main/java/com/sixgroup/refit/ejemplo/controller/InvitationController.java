@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,20 +23,59 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/invitations")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // 🛡️ Seguridad global: Solo ADMIN accede a este controlador
+@PreAuthorize("hasRole('ADMIN')")
 public class InvitationController {
 
     private final InvitationRepository invitationRepository;
 
     // =====================================================
-    // CREAR INVITACIÓN
+    // GESTIÓN DE LISTADOS Y FILTROS
     // =====================================================
+
+    /**
+     * Endpoint Maestro: Lista todo o filtra por estados específicos.
+     * Uso: /all?statuses=PENDING,ACCEPTED
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority('admin:read')")
+    public ResponseEntity<List<Invitation>> getAll(
+            @RequestParam(required = false) List<InvitationStatus> statuses) {
+
+        if (statuses == null || statuses.isEmpty()) {
+            return ResponseEntity.ok(invitationRepository.findAllByOrderByCreatedAtDesc());
+        }
+        return ResponseEntity.ok(invitationRepository.findByStatusInOrderByCreatedAtDesc(statuses));
+    }
+
+    /**
+     * Retorna todos los tipos de estado disponibles en el sistema.
+     */
+    @GetMapping("/statuses")
+    @PreAuthorize("hasAuthority('admin:read')")
+    public ResponseEntity<List<InvitationStatus>> getAvailableStatuses() {
+        return ResponseEntity.ok(Arrays.asList(InvitationStatus.values()));
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAuthority('admin:read')")
+    public ResponseEntity<List<Invitation>> getPendingInvitations() {
+        return ResponseEntity.ok(invitationRepository.findByStatusOrderByCreatedAtDesc(InvitationStatus.PENDING));
+    }
+
+    @GetMapping("/history")
+    @PreAuthorize("hasAuthority('admin:read')")
+    public ResponseEntity<List<Invitation>> getHistory() {
+        return ResponseEntity.ok(invitationRepository.findByStatusNotOrderByCreatedAtDesc(InvitationStatus.PENDING));
+    }
+
+    // =====================================================
+    // ACCIONES (CREACIÓN Y ESTADOS)
+    // =====================================================
+
     @PostMapping
     @PreAuthorize("hasAuthority('admin:create')")
     @Transactional
     public ResponseEntity<?> createInvitation(@RequestBody CreateInvitationRequest request) {
-
-        // Evitar duplicados en estado PENDING para el mismo email
         if (invitationRepository.existsByEmailAndStatus(request.email(), InvitationStatus.PENDING)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Ya existe una invitación pendiente para este correo.");
@@ -52,33 +92,8 @@ public class InvitationController {
                 .expiresAt(Instant.now().plus(48, ChronoUnit.HOURS))
                 .build();
 
-        Invitation saved = invitationRepository.save(invitation);
-        log.info("ADMIN: Nueva invitación creada para {} con ID {}", saved.getEmail(), saved.getId());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(invitationRepository.save(invitation));
     }
-
-    // =====================================================
-    // LISTADOS (PENDIENTES Y HISTÓRICO)
-    // =====================================================
-
-    @GetMapping("/pending")
-    @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<List<Invitation>> getPendingInvitations() {
-        return ResponseEntity.ok(invitationRepository.findByStatusOrderByCreatedAtDesc(InvitationStatus.PENDING));
-    }
-
-    @GetMapping("/history")
-    @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<List<Invitation>> getHistory() {
-        return ResponseEntity.ok(invitationRepository.findByStatusNotOrderByCreatedAtDesc(InvitationStatus.PENDING));
-    }
-
-    // =====================================================
-    // GESTIÓN DE ESTADOS (MÁQUINA DE GRAFOS)
-    // =====================================================
-
-
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('admin:update')")
@@ -89,19 +104,14 @@ public class InvitationController {
 
         return invitationRepository.findById(id)
                 .map(invitation -> {
-                    // Validamos la transición según el grafo definido en el Enum
                     if (!invitation.getStatus().canTransitionTo(newStatus)) {
-                        log.warn("ADMIN: Intento de transición inválida de {} a {} para la invitación {}",
-                                invitation.getStatus(), newStatus, id);
                         return ResponseEntity.status(HttpStatus.CONFLICT)
                                 .body("Transición no permitida: de " + invitation.getStatus() + " a " + newStatus);
                     }
 
                     invitation.setStatus(newStatus);
                     invitationRepository.save(invitation);
-                    log.info("ADMIN: Invitación {} actualizada a estado {}", id, newStatus);
-
-                    return ResponseEntity.ok("Estado actualizado correctamente a " + newStatus);
+                    return ResponseEntity.ok("Estado actualizado a " + newStatus);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

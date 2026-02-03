@@ -1,77 +1,90 @@
+# language: es
 @admin @invitations @state-machine
-Feature: Gestión del Ciclo de Vida de Invitaciones
+Característica: Gestión del Ciclo de Vida de Invitaciones
 
   Como administrador del sistema
-  Quiero gestionar los estados de las invitaciones y su historial
+  Quiero gestionar los estados de las invitaciones y filtrar su historial
   Para controlar el acceso de nuevos usuarios de forma segura
 
-  Background:
-    Given el administrador está autenticado
+  Antecedentes:
+    Dado el administrador está autenticado
 
   # =====================================================
   # CREACIÓN Y DUPLICADOS
   # =====================================================
 
-  Scenario: Crear una invitación nueva correctamente
-    When creo una nueva invitación para el email "nuevo-usuario@test.com"
-    Then la respuesta tiene código 201
-    And la invitación se crea correctamente
+  Escenario: Crear una invitación nueva correctamente
+    Cuando creo una nueva invitación para el email "nuevo-usuario@test.com"
+    Entonces la respuesta tiene código 201
+    Y la invitación se crea correctamente
 
-  Scenario: Evitar duplicados de invitaciones pendientes
-    Given existe una invitación pendiente
-    When creo una nueva invitación para el email "repetido@test.com"
-    And creo una nueva invitación para el email "repetido@test.com"
-    Then la respuesta tiene código 409
-
-  # =====================================================
-  # TRANSICIONES VÁLIDAS (MÁQUINA DE ESTADOS)
-  # =====================================================
-
-  Scenario: Flujo de aprobación: de Pendiente a Aceptada y luego a Aprobada
-    Given existe una invitación con estado "PENDING"
-    When el administrador cambia el estado a "ACCEPTED"
-    Then la respuesta tiene código 200
-    And la invitación tiene el estado "ACCEPTED"
-
-    When el administrador cambia el estado a "APPROVED"
-    Then la respuesta tiene código 200
-    And la invitación tiene el estado "APPROVED"
-
-  Scenario: Rechazar una invitación directamente desde pendiente
-    Given existe una invitación con estado "PENDING"
-    When el administrador cambia el estado a "REJECTED"
-    Then la respuesta tiene código 200
-    And la invitación tiene el estado "REJECTED"
+  Escenario: Evitar duplicados de invitaciones pendientes
+    Dado existe una invitación pendiente
+    Cuando creo una nueva invitación para el email "repetido@test.com"
+    Y creo una nueva invitación para el email "repetido@test.com"
+    Entonces la respuesta tiene código 409
 
   # =====================================================
-  # TRANSICIONES INVÁLIDAS (REGLAS DEL GRAFO)
+  # TRANSICIONES DE LA MÁQUINA DE ESTADOS
   # =====================================================
 
-  Scenario Outline: Bloquear movimientos ilegales en el grafo de estados
-    Given existe una invitación con estado "<estado_actual>"
-    When el administrador intenta cambiar el estado a "<nuevo_estado>"
-    Then la respuesta tiene código 409
-    And el mensaje de error indica "Transición no permitida"
+  Escenario: Flujo de aprobación: de Pendiente a Aceptada y luego a Aprobada
+    Dado existe una invitación con estado "PENDING"
+    Cuando el administrador cambia el estado a "ACCEPTED"
+    Entonces la respuesta tiene código 200
+    Y la invitación tiene el estado "ACCEPTED"
 
-    Examples:
-      | estado_actual | nuevo_estado | motivo                             |
-      | REJECTED      | ACCEPTED     | No se puede reabrir un rechazo     |
-      | APPROVED      | PENDING      | No se puede volver atrás de aprobado|
-      | PENDING       | APPROVED     | Debe pasar por ACCEPTED primero    |
-      | REJECTED      | APPROVED     | Un rechazado no puede ser aprobado |
+    Cuando el administrador cambia el estado a "APPROVED"
+    Entonces la respuesta tiene código 200
+    Y la invitación tiene el estado "APPROVED"
+
+  Escenario: Rechazar una invitación directamente desde pendiente
+    Dado existe una invitación con estado "PENDING"
+    Cuando el administrador cambia el estado a "REJECTED"
+    Entonces la respuesta tiene código 200
+    Y la invitación tiene el estado "REJECTED"
 
   # =====================================================
-  # LISTADOS E HISTÓRICO
+  # REGLAS DE NEGOCIO (TRANSICIONES INVÁLIDAS)
   # =====================================================
 
-  Scenario: Consultar el listado de invitaciones pendientes
-    Given existe una invitación con estado "PENDING"
-    When el administrador consulta las invitaciones pendientes
-    Then la respuesta tiene código 200
-    And se devuelve una lista de invitaciones pendientes
+  Esquema del escenario: Bloquear movimientos ilegales en el grafo de estados
+    Dado existe una invitación con estado "<estado_actual>"
+    Cuando el administrador intenta cambiar el estado a "<nuevo_estado>"
+    Entonces la respuesta tiene código 409
+    Y el mensaje de error indica "Transición no permitida"
 
-  Scenario: Consultar el histórico de invitaciones (No pendientes)
-    Given existen invitaciones aceptadas o expiradas
-    When el administrador consulta el histórico de invitaciones
-    Then la respuesta tiene código 200
-    And la invitación tiene el estado "ACCEPTED"
+    Ejemplos:
+      | estado_actual | nuevo_estado | motivo                              |
+      | REJECTED      | ACCEPTED     | No se puede reabrir un rechazo      |
+      | APPROVED      | PENDING      | No se puede volver atrás            |
+      | PENDING       | APPROVED     | Debe pasar por ACCEPTED primero     |
+      | REJECTED      | APPROVED     | Un rechazado no puede ser aprobado  |
+
+  # =====================================================
+  # LISTADOS, FILTROS E HISTÓRICO
+  # =====================================================
+
+  Escenario: Consultar el listado de invitaciones pendientes
+    Dado existe una invitación con estado "PENDING"
+    Cuando el administrador consulta las invitaciones pendientes
+    Entonces la respuesta tiene código 200
+    Y se devuelve una lista de invitaciones pendientes
+
+  Escenario: Consultar el histórico de invitaciones (Excluye pendientes)
+    Dado existen invitaciones aceptadas o expiradas
+    Cuando el administrador consulta el histórico de invitaciones
+    Entonces la respuesta tiene código 200
+    Y se devuelve una lista de invitaciones del histórico
+
+  Escenario: Filtrado dinámico por múltiples estados
+    Dado existe una invitación con estado "ACCEPTED"
+    Y existe una invitación con estado "REJECTED"
+    Cuando el administrador consulta todas las invitaciones filtrando por "ACCEPTED,REJECTED"
+    Entonces la respuesta tiene código 200
+    Y todas las invitaciones devueltas tienen el estado "ACCEPTED" o "REJECTED"
+
+  Escenario: Consultar metadatos de estados disponibles
+    Cuando el administrador consulta los estados disponibles
+    Entonces la respuesta tiene código 200
+    Y la lista contiene "PENDING", "ACCEPTED", "REJECTED", "EXPIRED" y "APPROVED"

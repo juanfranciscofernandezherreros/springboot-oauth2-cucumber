@@ -8,6 +8,8 @@ import io.cucumber.java.en.When;
 import net.serenitybdd.rest.SerenityRest;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+
 import static org.hamcrest.Matchers.*;
 
 public class InvitationSteps extends BaseRestConfig {
@@ -19,30 +21,24 @@ public class InvitationSteps extends BaseRestConfig {
     private Long currentInvitationId;
 
     // =====================================================
-    // GIVEN - SETUP AUTOMÁTICO DE DATOS
+    // GIVEN
     // =====================================================
 
     @Given("existe una invitación con estado {string}")
     public void existeInvitacionConEstado(String estado) {
         configureRestAssured();
-
-        // 1. Siempre empezamos creando una en PENDING (es el único estado inicial válido)
         String email = "flow-test-" + System.currentTimeMillis() + "@test.com";
         crearNuevaInvitacionEnServidor(email);
 
-        // 2. Transicionamos según lo que pida el test respetando el grafo
         if (estado.equals("ACCEPTED") || estado.equals("APPROVED")) {
             ejecutarCambioEstado(currentInvitationId, "ACCEPTED");
         }
-
         if (estado.equals("APPROVED")) {
             ejecutarCambioEstado(currentInvitationId, "APPROVED");
         }
-
         if (estado.equals("REJECTED")) {
             ejecutarCambioEstado(currentInvitationId, "REJECTED");
         }
-
         if (estado.equals("EXPIRED")) {
             ejecutarCambioEstado(currentInvitationId, "EXPIRED");
         }
@@ -60,7 +56,7 @@ public class InvitationSteps extends BaseRestConfig {
     }
 
     // =====================================================
-    // WHEN - ACCIONES
+    // WHEN
     // =====================================================
 
     @When("creo una nueva invitación para el email {string}")
@@ -72,16 +68,6 @@ public class InvitationSteps extends BaseRestConfig {
     @When("el administrador intenta cambiar el estado a {string}")
     public void cambiarEstado(String nuevoEstado) {
         ejecutarCambioEstado(currentInvitationId, nuevoEstado);
-    }
-
-    @When("el administrador acepta la invitación")
-    public void aceptarInvitacion() {
-        ejecutarCambioEstado(currentInvitationId, "ACCEPTED");
-    }
-
-    @When("el administrador rechaza la invitación")
-    public void rechazarInvitacion() {
-        ejecutarCambioEstado(currentInvitationId, "REJECTED");
     }
 
     @When("el administrador consulta las invitaciones pendientes")
@@ -100,8 +86,25 @@ public class InvitationSteps extends BaseRestConfig {
                 .get(INV_PATH + "/history");
     }
 
+    @When("el administrador consulta todas las invitaciones filtrando por {string}")
+    public void consultarConFiltro(String estados) {
+        configureRestAssured();
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .queryParam("statuses", estados)
+                .get(INV_PATH + "/all");
+    }
+
+    @When("el administrador consulta los estados disponibles")
+    public void consultarEstadosDisponibles() {
+        configureRestAssured();
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .get(INV_PATH + "/statuses");
+    }
+
     // =====================================================
-    // THEN - VALIDACIONES
+    // THEN
     // =====================================================
 
     @Then("la invitación se crea correctamente")
@@ -112,51 +115,48 @@ public class InvitationSteps extends BaseRestConfig {
     @Then("la invitación tiene el estado {string}")
     public void verificarEstadoActual(String estadoEsperado) {
         configureRestAssured();
-        // Buscamos en toda la base de datos (pendientes + histórico)
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
-                .get(INV_PATH + "/pending");
+                .get(INV_PATH + "/all");
 
-        boolean estaEnPendientes = SerenityRest.lastResponse().jsonPath().getList("id").contains(currentInvitationId.intValue());
-
-        if (!estaEnPendientes) {
-            SerenityRest.given()
-                    .header("Authorization", "Bearer " + testContext.getAccessToken())
-                    .get(INV_PATH + "/history");
-        }
-
-        SerenityRest.then().body("find { it.id == " + currentInvitationId + " }.status", equalTo(estadoEsperado));
+        SerenityRest.then()
+                .body("find { it.id == " + currentInvitationId + " }.status", equalTo(estadoEsperado));
     }
 
     @And("se devuelve una lista de invitaciones pendientes")
     public void verificarListaPendientes() {
         SerenityRest.then()
                 .statusCode(200)
-                // 1. Validamos que la respuesta es una lista (no nula)
-                .body("$", is(notNullValue()))
-                .body("$", instanceOf(java.util.List.class))
-                // 2. Validamos que, si hay elementos, todos sean PENDING
-                // Usamos everyItem para asegurar la integridad del filtro del controlador
                 .body("status", everyItem(equalTo("PENDING")));
+    }
 
-        // Log para depuración en tu consola de Windows
-        int count = SerenityRest.lastResponse().jsonPath().getList("$").size();
-        System.out.println("DEBUG: Se han encontrado " + count + " invitaciones pendientes.");
+    @And("se devuelve una lista de invitaciones del histórico")
+    public void verificarListaHistorico() {
+        SerenityRest.then()
+                .statusCode(200)
+                .body("status", everyItem(not(equalTo("PENDING"))));
+    }
+
+    @And("todas las invitaciones devueltas tienen el estado {string} o {string}")
+    public void verificarFiltroMultiple(String s1, String s2) {
+        SerenityRest.then()
+                .statusCode(200)
+                .body("status", everyItem(anyOf(equalTo(s1), equalTo(s2))));
+    }
+
+    @And("la lista contiene los enums de estado")
+    public void verificarEnums() {
+        SerenityRest.then()
+                .body("$", hasItems("PENDING", "ACCEPTED", "REJECTED", "EXPIRED", "APPROVED"));
     }
 
     @Then("el mensaje de error indica {string}")
     public void el_mensaje_de_error_indica(String mensajeEsperado) {
-        // Validamos que el cuerpo de la respuesta contenga el texto esperado
-        // Tu controlador devuelve un String plano en el .body(), así que esto funcionará perfecto
-        SerenityRest.then()
-                .body(containsString(mensajeEsperado));
-
-        // Opcional: Imprime en consola para ver qué está llegando realmente
-        System.out.println("Mensaje real recibido: " + SerenityRest.lastResponse().asString());
+        SerenityRest.then().body(containsString(mensajeEsperado));
     }
 
     // =====================================================
-    // LÓGICA PRIVADA DE APOYO
+    // APOYO
     // =====================================================
 
     private void crearNuevaInvitacionEnServidor(String email) {
@@ -164,18 +164,22 @@ public class InvitationSteps extends BaseRestConfig {
         SerenityRest.given()
                 .header("Authorization", "Bearer " + testContext.getAccessToken())
                 .contentType("application/json")
-                .body("""
-                    {
-                      "email": "%s",
-                      "name": "User Automation",
-                      "description": "Test Invitación"
-                    }
-                    """.formatted(email))
+                .body(String.format("{\"email\": \"%s\", \"name\": \"QA\", \"description\": \"Test\"}", email))
                 .post(INV_PATH);
 
         if (SerenityRest.lastResponse().statusCode() == 201) {
             currentInvitationId = SerenityRest.lastResponse().jsonPath().getLong("id");
         }
+    }
+
+    @And("la lista contiene {string}, {string}, {string}, {string} y {string}")
+    public void verificarListaCompletaDeEstados(String s1, String s2, String s3, String s4, String s5) {
+        SerenityRest.then()
+                .statusCode(200)
+                .body("$", hasItems(s1, s2, s3, s4, s5))
+                .body("size()", is(5)); // Validamos que están todos los que definiste en el Enum
+
+        System.out.println("DEBUG: Estados verificados correctamente en el endpoint /statuses");
     }
 
     private void ejecutarCambioEstado(Long id, String estado) {

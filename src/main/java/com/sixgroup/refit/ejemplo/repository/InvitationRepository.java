@@ -5,22 +5,24 @@ import com.sixgroup.refit.ejemplo.model.InvitationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 @Repository
 public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
-    // Para la pestaña de "Pendientes"
-    List<Invitation> findByStatusOrderByCreatedAtDesc(InvitationStatus status);
+    // Comprobación de duplicados (Requerido por tus tests)
+    boolean existsByEmailAndStatus(String email, InvitationStatus status);
 
-    // Para la pestaña de "Histórico" (Cualquier estado que no sea PENDING)
+    // Listado general ordenado
+    List<Invitation> findAllByOrderByCreatedAtDesc();
+
+    // El "Motor" de tus filtros: permite buscar por uno o varios estados (Ej: PENDING + ACCEPTED)
+    List<Invitation> findByStatusInOrderByCreatedAtDesc(List<InvitationStatus> statuses);
+
+    // Específicos para los tests Gherkin existentes
+    List<Invitation> findByStatusOrderByCreatedAtDesc(InvitationStatus status);
     List<Invitation> findByStatusNotOrderByCreatedAtDesc(InvitationStatus status);
 
-    // Para el contador (2)
-    long countByStatus(InvitationStatus status);
 
-    boolean existsByEmailAndStatus(String email, InvitationStatus status);
+    long countByStatus(InvitationStatus status);
 }

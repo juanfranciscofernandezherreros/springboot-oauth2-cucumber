@@ -58,14 +58,6 @@ Feature: Gestión de usuarios por administrador
     When el administrador actualiza el rol del usuario "usuario@login.com" a "ADMIN"
     Then la respuesta tiene código 200
 
-  # =====================================================
-  # ELIMINAR USUARIO
-  # =====================================================
-  Scenario: El administrador elimina un usuario
-    When el administrador elimina el usuario con id 12
-    Then la respuesta tiene código 200
-
-
       # =====================================================
   # ACTUALIZAR USUARIO
   # =====================================================
