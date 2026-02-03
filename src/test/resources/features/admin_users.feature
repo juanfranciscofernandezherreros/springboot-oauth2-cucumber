@@ -1,79 +1,69 @@
+# language: es
 @admin @users
-Feature: Gestión de usuarios por administrador
+Característica: Gestión de Usuarios por Administrador
+
   Como administrador del sistema
-  Quiero gestionar usuarios
-  Para controlar accesos y estados del sistema
+  Quiero gestionar las cuentas de usuario, sus roles y estados de bloqueo
+  Para controlar los accesos y mantener la seguridad del sistema
 
-  Background:
-    Given el administrador está autenticado
-
-  # =====================================================
-  # CREAR USUARIO
-  # =====================================================
-  Scenario: El administrador crea un usuario con rol USER
-    When el administrador crea un usuario con rol USER
-    Then la respuesta tiene código 201
+  Antecedentes:
+    Dado el administrador está autenticado
 
   # =====================================================
-  # LISTAR USUARIOS
+  # CREACIÓN Y CONSULTA GENERAL
   # =====================================================
-  Scenario: El administrador obtiene el listado de usuarios
-    When el administrador solicita el listado de usuarios
-    Then la respuesta tiene código 200
-    And el total de usuarios devueltos es mayor que 0
+
+  Escenario: El administrador crea un usuario con rol USER
+    Cuando el administrador crea un usuario con rol USER
+    Entonces la respuesta tiene código 201
+
+  Escenario: El administrador obtiene el listado de usuarios
+    Cuando el administrador solicita el listado de usuarios
+    Entonces la respuesta tiene código 200
+    Y el total de usuarios devueltos es mayor que 0
 
   # =====================================================
-  # LISTAR USUARIOS BLOQUEADOS
+  # GESTIÓN DE BLOQUEOS Y SEGURIDAD
   # =====================================================
-  Scenario: El administrador obtiene el listado de usuarios bloqueados
-    When el administrador solicita el listado de usuarios bloqueados
-    Then la respuesta tiene código 200
-    And se devuelve una lista de usuarios bloqueados
+
+  Escenario: El administrador obtiene el listado de usuarios bloqueados
+    Cuando el administrador solicita el listado de usuarios bloqueados
+    Entonces la respuesta tiene código 200
+    Y se devuelve una lista de usuarios bloqueados
+
+  Escenario: El administrador consulta el estado de un usuario bloqueado
+    Cuando el administrador consulta el estado del usuario con email "locked.user@test.com"
+    Entonces la respuesta tiene código 200
+
+  Escenario: El administrador desbloquea un usuario bloqueado
+    Cuando el administrador desbloquea al usuario con email "locked.user@test.com"
+    Entonces la respuesta tiene código 200
+
+  Escenario: El administrador bloquea un usuario activo
+    Cuando el administrador bloquea al usuario con email "active.user@test.com"
+    Entonces la respuesta tiene código 200
 
   # =====================================================
-  # CONSULTAR ESTADO DE USUARIO
+  # ACTUALIZACIÓN DE DATOS Y ROLES
   # =====================================================
-  Scenario: El administrador consulta el estado de un usuario bloqueado
-    When el administrador consulta el estado del usuario con email "locked.user@test.com"
-    Then la respuesta tiene código 200
 
-  # =====================================================
-  # DESBLOQUEAR USUARIO
-  # =====================================================
-  Scenario: El administrador desbloquea un usuario bloqueado
-    When el administrador desbloquea al usuario con email "locked.user@test.com"
-    Then la respuesta tiene código 200
+  Escenario: El administrador actualiza el rol de un usuario
+    Cuando el administrador actualiza el rol del usuario "usuario@login.com" a "ADMIN"
+    Entonces la respuesta tiene código 200
 
-    # =====================================================
-  # BLOQUEAR USUARIO
-  # =====================================================
-  Scenario: El administrador bloquea un usuario activo
-    When el administrador bloquea al usuario con email "active.user@test.com"
-    Then la respuesta tiene código 200
-
-  # =====================================================
-  # ACTUALIZAR ROL
-  # =====================================================
-  Scenario: El administrador actualiza el rol de un usuario
-    When el administrador actualiza el rol del usuario "usuario@login.com" a "ADMIN"
-    Then la respuesta tiene código 200
-
-      # =====================================================
-  # ACTUALIZAR USUARIO
-  # =====================================================
-  Scenario: El administrador actualiza los datos de un usuario
-    When el administrador actualiza el usuario con id 7
+  Escenario: El administrador actualiza los datos de un usuario por ID
+    Cuando el administrador actualiza el usuario con id 7
       | name             | Nuevo Nombre Usuario |
       | role             | USER                 |
-      | accountNonLocked | false                 |
-    Then la respuesta tiene código 200
+      | accountNonLocked | false                |
+    Entonces la respuesta tiene código 200
 
   # =====================================================
-  # CONSULTAR ESTADÍSTICAS
+  # MÉTRICAS Y REPORTES
   # =====================================================
-  Scenario: El administrador consulta las estadísticas globales de usuarios
-    When el administrador solicita las estadísticas de usuarios
-    Then la respuesta tiene código 200
-    And las estadísticas muestran un total de usuarios mayor o igual a 0
-    And se visualiza el conteo de bloqueados e invitaciones pendientes
 
+  Escenario: El administrador consulta las estadísticas globales de usuarios
+    Cuando el administrador solicita las estadísticas de usuarios
+    Entonces la respuesta tiene código 200
+    Y las estadísticas muestran un total de usuarios mayor o igual a 0
+    Y se visualiza el conteo de bloqueados e invitaciones pendientes

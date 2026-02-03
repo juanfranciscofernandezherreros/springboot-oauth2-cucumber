@@ -16,11 +16,14 @@ public enum InvitationStatus {
             // Una vez aceptada, puede aprobarse definitivamente o rechazarse tras revisión
             case ACCEPTED -> List.of(APPROVED, REJECTED).contains(nextStatus);
 
-            // Si está expirada, quizás permitas re-activarla (volver a PENDING) o rechazarla
+            // Si está expirada, permitimos re-activarla o rechazarla definitivamente
             case EXPIRED -> List.of(PENDING, REJECTED).contains(nextStatus);
 
-            // APPROVED y REJECTED suelen ser estados finales (nodos hoja)
-            case APPROVED, REJECTED -> false;
+            // Cambio solicitado: REJECTED ahora puede volver a PENDING
+            case REJECTED -> List.of(PENDING).contains(nextStatus);
+
+            // APPROVED sigue siendo el único estado final (éxito total)
+            case APPROVED -> false;
 
             default -> false;
         };

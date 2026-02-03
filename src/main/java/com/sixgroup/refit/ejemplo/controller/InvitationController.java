@@ -115,4 +115,47 @@ public class InvitationController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // =====================================================
+    // ELIMINACIÓN Y MODIFICACIÓN
+    // =====================================================
+
+    /**
+     * Elimina una invitación permanentemente.
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('admin:delete')")
+    @Transactional
+    public ResponseEntity<Void> deleteInvitation(@PathVariable Long id) {
+        if (!invitationRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        invitationRepository.deleteById(id);
+        log.info("Invitación con ID {} eliminada por el administrador", id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Modifica los datos de una invitación existente.
+     * Normalmente se restringe a campos informativos, no al email o token.
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('admin:update')")
+    @Transactional
+    public ResponseEntity<?> updateInvitation(
+            @PathVariable Long id,
+            @RequestBody CreateInvitationRequest request) {
+
+        return invitationRepository.findById(id)
+                .map(invitation -> {
+                    invitation.setName(request.name());
+                    invitation.setDescription(request.description());
+                    // Si permites cambiar el email, recuerda validar duplicados aquí
+
+                    invitationRepository.save(invitation);
+                    log.info("Invitación {} actualizada con éxito", id);
+                    return ResponseEntity.ok(invitation);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
