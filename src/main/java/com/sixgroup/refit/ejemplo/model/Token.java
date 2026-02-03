@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.envers.Audited;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited
 @Entity
 public class Token {
 

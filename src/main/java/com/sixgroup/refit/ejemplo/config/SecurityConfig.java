@@ -12,6 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -32,10 +33,13 @@ public class SecurityConfig {
 
         http
                 /* =========================
-                   CORS & CSRF
+                   CORS, CSRF & HEADERS (H2 FIX)
                    ========================= */
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Desactivamos CSRF para que H2 pueda hacer POST y JWT funcione
                 .csrf(csrf -> csrf.disable())
+                // NECESARIO PARA H2: Permite que la consola se cargue en marcos (frames)
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 
                 /* =========================
                    SESSION (JWT = STATELESS)
@@ -49,8 +53,10 @@ public class SecurityConfig {
                    ========================= */
                 .authorizeHttpRequests(auth -> auth
 
-                        // 1. Recursos Públicos y Preflight
+                        // 1. Recursos Públicos y H2 Console
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Usamos AntPathRequestMatcher para asegurar el acceso a H2
+                        .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
                         .requestMatchers(
                                 "/",
                                 "/index.html",
@@ -62,14 +68,12 @@ public class SecurityConfig {
                                 "/ws-invitations/**"
                         ).permitAll()
 
-                        // 2. Invitaciones (Configuración específica)
+                        // 2. Invitaciones
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/invitations").permitAll()
                         .requestMatchers("/api/v1/admin/invitations/**").hasRole("ADMIN")
 
-                        // 3. 🔒 GESTIÓN DE PERFIL (Lo que pediste)
-                        // Solo el rol USER puede editar su perfil
+                        // 3. 🔒 GESTIÓN DE PERFIL
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/update").hasRole("USER")
-                        // Consultar el perfil requiere estar autenticado (cualquier rol)
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
 
                         // 4. 🔒 ADMIN AREA
@@ -100,9 +104,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /* =========================
-       CORS CONFIG
-       ========================= */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();

@@ -2,6 +2,8 @@ package com.sixgroup.refit.ejemplo.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -13,6 +15,7 @@ import java.util.UUID;
         })
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
+@Audited
 @Builder
 public class Invitation {
 
