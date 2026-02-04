@@ -1,0 +1,45 @@
+package com.fernandez.backend.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.envers.Audited;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = "invitations",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = "token"),
+                @UniqueConstraint(columnNames = {"email", "status"})
+        })
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Audited
+@Builder
+public class Invitation {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Column(nullable = false, unique = true)
+    private String token;
+
+    @Enumerated(EnumType.STRING)
+    private InvitationStatus status;
+
+    private Instant createdAt;
+    private Instant expiresAt;
+}

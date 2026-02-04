@@ -14,7 +14,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.tutorial</groupId>
+    <groupId>com.fernandez.backend</groupId>
     <artifactId>security-jwt</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
