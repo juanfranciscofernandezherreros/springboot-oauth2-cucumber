@@ -75,9 +75,10 @@ public class SecurityConfig {
                         // 3. 🔒 GESTIÓN DE PERFIL
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/update").hasRole("USER")
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/admin/audit").hasRole("ADMIN")
 
                         // 4. 🔒 ADMIN AREA
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1cleardmin/**").hasRole("ADMIN")
 
                         // 5. Resto de la API
                         .anyRequest().authenticated()

@@ -3,7 +3,7 @@ Feature: Autenticación y Seguridad de Usuarios
 
   Background:
     # Este paso prepara la BD y obtiene el token necesario
-    Given reinicio el entorno y me autentico con usuario "admin@test.com" y password "Pass123!" y rol "ADMIN"
+    Given reinicio el entorno y me autentico con usuario "" y password "Pass123!" y rol "ADMIN"
 
   Scenario Outline: Inicio de sesión exitoso y recepción de tokens
     Given reinicio el entorno y me autentico con usuario "<email>" y password "<password>" y rol "<role>"
