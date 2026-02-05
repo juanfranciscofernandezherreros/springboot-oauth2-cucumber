@@ -4,16 +4,22 @@ import com.fernandez.backend.config.BaseRestConfig;
 import com.fernandez.backend.model.Role;
 import com.fernandez.backend.model.User;
 import com.fernandez.backend.repository.UserRepository;
+import com.fernandez.backend.utils.constants.AuthEndpoints;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import net.serenitybdd.rest.SerenityRest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Map;
 import java.util.Objects;
 
+import static com.fernandez.backend.utils.constants.AuthEndpoints.BASE;
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 public class AuthLoginSteps extends BaseRestConfig {
@@ -100,7 +106,7 @@ public class AuthLoginSteps extends BaseRestConfig {
                       "newPassword": "%s"
                     }
                     """.formatted(email, nuevaPass))
-                .post("/auth/reset-password");
+                .post(BASE+ AuthEndpoints.RESET_PASSWORD);
     }
 
     @And("la respuesta contiene el mensaje {string}")
@@ -109,4 +115,47 @@ public class AuthLoginSteps extends BaseRestConfig {
         SerenityRest.then()
                 .body("mensaje", equalTo(mensajeEsperado));
     }
+
+    @When("cambio mi contraseña a la nueva clave {string}")
+    public void cambio_mi_contraseña_a_la_nueva_clave(String newPassword) {
+
+        configureRestAssured();
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .contentType(ContentType.JSON)
+                .body("""
+                {
+                  "newPassword": "%s"
+                }
+                """.formatted(newPassword))
+                .post("/api/v1/user/me/password");
+
+        // Guardar NUEVOS tokens devueltos
+        if (SerenityRest.lastResponse().statusCode() == 200) {
+            testContext.setAccessToken(
+                    SerenityRest.lastResponse().jsonPath().getString("access_token")
+            );
+            testContext.setRefreshToken(
+                    SerenityRest.lastResponse().jsonPath().getString("refresh_token")
+            );
+        }
+    }
+
+    @And("puedo acceder a mi perfil usando el nuevo access token")
+    public void puedo_acceder_a_mi_perfil_usando_el_nuevo_access_token() {
+
+        configureRestAssured();
+
+        SerenityRest.given()
+                .header("Authorization", "Bearer " + testContext.getAccessToken())
+                .accept(ContentType.JSON)
+                .get("/api/v1/user/me");
+
+        SerenityRest.then()
+                .statusCode(200)
+                .body("email", notNullValue());
+    }
+
+
 }

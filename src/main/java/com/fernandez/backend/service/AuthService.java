@@ -1,7 +1,6 @@
 package com.fernandez.backend.service;
 
 import com.fernandez.backend.dto.*;
-import com.sixgroup.refit.ejemplo.dto.*;
 import com.fernandez.backend.exceptions.InvalidRoleForRegistrationException;
 import com.fernandez.backend.exceptions.IpBlockedException;
 import com.fernandez.backend.model.Role;
@@ -159,33 +158,6 @@ public class AuthService {
         }
     }
 
-    /* ===================== PASSWORD ===================== */
-
-    @Transactional
-    public void resetPassword(ResetPasswordRequest request, String clientIp) {
-
-        if (ipLockService.isIpBlocked(clientIp)) {
-            throw new IpBlockedException();
-        }
-
-        var user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> {
-                    ipLockService.registerFailedAttempt(clientIp);
-                    return new RuntimeException("Solicitud inválida");
-                });
-
-        if (!user.isAccountNonLocked()) {
-            ipLockService.registerFailedAttempt(clientIp);
-            throw new LockedException("La cuenta está bloqueada.");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
-        revokeAllUserTokens(user);
-        userRepository.save(user);
-
-        log.info("Contraseña actualizada para {}", user.getEmail());
-    }
-
     /* ===================== MÉTODOS PRIVADOS ===================== */
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -294,4 +266,41 @@ public class AuthService {
             log.info("Logout realizado");
         });
     }
+
+    @Transactional
+    public TokenResponse resetPasswordFromProfile(String email, String newPassword) {
+
+        // 1️⃣ Buscar usuario autenticado
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Usuario no encontrado"));
+
+        // 3️⃣ Actualizar contraseña
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // 4️⃣ Invalidar TODOS los tokens activos
+        revokeAllUserTokens(user);
+
+        // 5️⃣ Resetear estado de seguridad
+        user.setFailedAttempt(0);
+        user.setAccountNonLocked(true);
+        user.setLockTime(null);
+
+        // 6️⃣ Generar NUEVOS tokens
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+
+        // 7️⃣ Guardarlos
+        saveUserToken(user, accessToken);
+        saveUserToken(user, refreshToken);
+
+        userRepository.save(user);
+
+        log.info("🔐 Contraseña actualizada desde perfil para {}", email);
+
+        // 8️⃣ Devolver tokens nuevos
+        return new TokenResponse(accessToken, refreshToken);
+    }
+
+
 }

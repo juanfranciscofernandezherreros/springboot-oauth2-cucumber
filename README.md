@@ -7,3 +7,4 @@ OpenAPI JSON	👉 http://localhost:8087/v3/api-docs
 
 OpenAPI YAML	👉 http://localhost:8087/v3/api-docs.yaml
 
+@change-password

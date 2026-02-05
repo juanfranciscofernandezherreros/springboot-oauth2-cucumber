@@ -57,25 +57,4 @@ public class AuthController {
         service.logout(authHeader);
         return ResponseEntity.ok().build();
     }
-
-    @PostMapping(AuthEndpoints.RESET_PASSWORD)
-    public ResponseEntity<?> resetPassword(
-            @RequestBody ResetPasswordRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        String ip = httpRequest.getRemoteAddr();
-
-        try {
-            service.resetPassword(request, ip);
-            return ResponseEntity.ok(Map.of("mensaje", "Contraseña actualizada"));
-
-        } catch (LockedException e) {
-            return ResponseEntity.status(HttpStatus.LOCKED)
-                    .body(Map.of("error", e.getMessage()));
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Error al procesar la solicitud"));
-        }
-    }
 }

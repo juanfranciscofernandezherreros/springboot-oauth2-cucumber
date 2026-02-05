@@ -1,15 +1,22 @@
 package com.fernandez.backend.controller;
 
+import com.fernandez.backend.dto.ResetPasswordRequest;
+import com.fernandez.backend.dto.TokenResponse;
 import com.fernandez.backend.dto.UpdateUserRequest;
 import com.fernandez.backend.dto.UserResponse;
 import com.fernandez.backend.model.User;
+import com.fernandez.backend.service.AuthService;
 import com.fernandez.backend.service.UserService;
 import com.fernandez.backend.utils.constants.UserEndpoints;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping(UserEndpoints.BASE)
@@ -17,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService service;
 
     @GetMapping(UserEndpoints.ME)
     public ResponseEntity<UserResponse> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
@@ -49,4 +57,26 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> changeMyPassword(
+            @RequestBody ResetPasswordRequest request,
+            Authentication authentication
+    ) {
+        String email = authentication.getName();
+
+        TokenResponse tokens =
+                service.resetPasswordFromProfile(email, request.newPassword());
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "mensaje", "Contraseña actualizada",
+                        "access_token", tokens.accessToken(),
+                        "refresh_token", tokens.refreshToken()
+                )
+        );
+    }
+
+
 }

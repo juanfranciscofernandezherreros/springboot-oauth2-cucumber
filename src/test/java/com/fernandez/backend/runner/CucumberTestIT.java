@@ -12,7 +12,7 @@ import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 @SelectClasspathResource(".")
 @ConfigurationParameter(
         key = GLUE_PROPERTY_NAME,
-        value = "com.sixgroup.refit.ejemplo"
+        value = "com.fernandez.backend"
 )
 public class CucumberTestIT {
 }
